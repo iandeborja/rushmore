@@ -38,6 +38,8 @@ const handler = NextAuth({
     signIn: "/auth/signin",
     error: "/auth/error",
   },
+  // Use a different environment variable name to avoid the secret reference issue
+  ...(process.env.NEXTAUTH_URL_PROD && { url: process.env.NEXTAUTH_URL_PROD }),
 });
 
 export { handler as GET, handler as POST };
