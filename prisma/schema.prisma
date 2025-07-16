@@ -1,0 +1,69 @@
+// Prisma schema for Rushmore
+// Models: User, Question, Rushmore, Vote, Friend
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  hashedPassword String?
+  rushmores Rushmore[]
+  votes     Vote[]
+  friends   Friend[] @relation("UserFriends")
+  friendOf  Friend[] @relation("FriendOf")
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id        String     @id @default(cuid())
+  prompt    String
+  date      DateTime   @unique
+  rushmores Rushmore[]
+  createdAt DateTime   @default(now())
+}
+
+model Rushmore {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+  item1      String
+  item2      String
+  item3      String
+  item4      String
+  votes      Vote[]
+  createdAt  DateTime @default(now())
+}
+
+model Vote {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  rushmore   Rushmore @relation(fields: [rushmoreId], references: [id])
+  rushmoreId String
+  value      Int      // 1 for upvote, -1 for downvote
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, rushmoreId])
+}
+
+model Friend {
+  id        String  @id @default(cuid())
+  user      User    @relation("UserFriends", fields: [userId], references: [id])
+  userId    String
+  friend    User    @relation("FriendOf", fields: [friendId], references: [id])
+  friendId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+} 
