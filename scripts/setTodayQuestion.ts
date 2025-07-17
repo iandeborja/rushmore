@@ -2,47 +2,54 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function setTodayQuestion() {
-  const question = process.argv[2];
-  
-  if (!question) {
-    console.error('Please provide a question!');
-    console.log('Usage: npx tsx scripts/setTodayQuestion.ts "your question here"');
-    process.exit(1);
-  }
-  
-  console.log(`Setting today's question to: "${question}"`);
-  
+async function setTodayQuestion(question: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Delete any existing questions for today
-  await prisma.question.deleteMany({
-    where: {
-      date: {
-        gte: today,
-        lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+  try {
+    // Check if question already exists for today
+    const existingQuestion = await prisma.question.findFirst({
+      where: {
+        date: {
+          gte: today,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+        },
       },
-    },
-  });
-  
-  // Create today's question
-  const newQuestion = await prisma.question.create({
-    data: {
-      prompt: question,
-      date: today,
-    },
-  });
-  
-  console.log('✅ Question set successfully!');
-  console.log('Question:', newQuestion);
+    });
+    
+    if (existingQuestion) {
+      // Update existing question
+      const updatedQuestion = await prisma.question.update({
+        where: { id: existingQuestion.id },
+        data: { prompt: question },
+      });
+      console.log(`✅ Updated today's question: "${updatedQuestion.prompt}"`);
+    } else {
+      // Create new question
+      const newQuestion = await prisma.question.create({
+        data: {
+          prompt: question,
+          date: today,
+        },
+      });
+      console.log(`✅ Set today's question: "${newQuestion.prompt}"`);
+    }
+  } catch (error) {
+    console.error('❌ Error setting today\'s question:', error);
+  }
 }
 
-setTodayQuestion()
-  .catch((e) => {
-    console.error('Error setting question:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  }); 
+// Get command line arguments
+const args = process.argv.slice(2);
+
+if (args.length === 0) {
+  console.error('Usage: npm run set-today-question "Your question here"');
+  console.error('Example: npm run set-today-question "Best ice cream flavors"');
+  process.exit(1);
+}
+
+const question = args.join(' '); // Join all arguments in case question has spaces
+setTodayQuestion(question);
+
+// Close database connection
+prisma.$disconnect(); 

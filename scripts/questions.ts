@@ -1,0 +1,28 @@
+// Pre-defined questions for Rushmore
+export const questions = [
+  "Things that make you say \"hell yea, it's summer\"",
+  "Best comfort foods",
+  "Worst fashion trends",
+  "Things you'd bring to a desert island",
+  "Best pizza toppings",
+  "Things that are underrated",
+  "Things that make you say \"hell yea, it's summer\"",
+  "Best movie sequels",
+  "Worst superhero movies",
+  "Things you'd find in a college dorm",
+  "Best breakfast foods",
+  "Things that are surprisingly expensive",
+  "Worst airplane experiences",
+  "Things you'd do if you won the lottery",
+  "Best childhood snacks",
+  "Things that make you instantly angry",
+  "Best fast food menu items",
+  "The worst buzzwords heard at an office",
+  "Movies you have never seen",
+  "Sports mascots",
+  "Stadium Food",
+  "Places to pull over on a road trip",
+  "Things you'd find in a teenager's room",
+  "Worst first date stories",
+  "Things that are overrated"
+]; 
