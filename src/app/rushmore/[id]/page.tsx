@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -163,9 +163,12 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
             {session ? (
               <>
                 <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username || session.user?.name}</p>
-                <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
+                <button 
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline bg-transparent border-none cursor-pointer"
+                >
                   sign out
-                </Link>
+                </button>
               </>
             ) : (
               <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">

@@ -4,7 +4,7 @@
 // Current question: "best fast food menu items"
 
 import { useState, useEffect, useMemo } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,6 +26,7 @@ interface Rushmore {
     name: string;
     username: string;
     email: string;
+    displayUsername?: string;
   };
   voteCount: number;
   upvotes: number;
@@ -41,6 +42,7 @@ interface Comment {
     name: string;
     username: string;
     email: string;
+    displayUsername?: string;
   };
   createdAt: string;
 }
@@ -49,6 +51,10 @@ export default function PlayPage() {
   const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
+
+  // Debug session data
+  console.log("PlayPage - Session status:", status);
+  console.log("PlayPage - Session data:", session);
 
   // No need to redirect to username setup since username is set during signup
   const [question, setQuestion] = useState<Question | null>(null);
@@ -513,14 +519,22 @@ export default function PlayPage() {
               {session ? (
                 <>
                   <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username || session.user?.name}</p>
-                  <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
+                  <button 
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline bg-transparent border-none cursor-pointer"
+                  >
                     sign out
-                  </Link>
+                  </button>
                 </>
               ) : (
-                <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                  sign up
-                </Link>
+                <div className="flex gap-2">
+                  <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
+                    sign up
+                  </Link>
+                  <Link href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
+                    sign in
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -767,12 +781,12 @@ export default function PlayPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-500 lowercase">#{index + 1}</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-800 lowercase">@{rushmore.user.username || rushmore.user.name}</span>
+                          <span className="font-medium text-gray-800 lowercase">@{rushmore.user.displayUsername}</span>
                           {rushmore.user.email.startsWith('anonymous-') && (
                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">guest</span>
                           )}
                         </div>
-                        {session && session.user?.email !== rushmore.user.email && rushmore.user.username && (
+                        {session && session.user?.email !== rushmore.user.email && (rushmore.user.username || rushmore.user.name) && !rushmore.user.email.startsWith('anonymous-') && (
                           <button
                             onClick={() => following[rushmore.user.email] 
                               ? handleUnfollow(rushmore.user.email)
@@ -883,7 +897,7 @@ export default function PlayPage() {
                               <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
                                 <div className="flex items-center gap-2 mb-1">
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-medium text-gray-700 lowercase">@{comment.user.username || comment.user.name}</span>
+                                    <span className="text-xs font-medium text-gray-700 lowercase">@{comment.user.displayUsername || comment.user.username || comment.user.name}</span>
                                     {comment.user.email.startsWith('anonymous-') && (
                                       <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">guest</span>
                                     )}

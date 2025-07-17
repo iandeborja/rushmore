@@ -10,13 +10,16 @@ const createPrismaClient = () => {
     throw new Error('DATABASE_URL is required in production')
   }
 
-  // Add connection string parameters for pooled connections
+  // For development, use a simple connection without pooling
   let databaseUrl = process.env.DATABASE_URL;
-  if (process.env.NODE_ENV === 'production' && databaseUrl) {
-    // Add connection pooling parameters
+  if (process.env.NODE_ENV === 'development' && databaseUrl) {
     const url = new URL(databaseUrl);
-    url.searchParams.set('connection_limit', '1');
-    url.searchParams.set('pool_timeout', '20');
+    // Remove any existing pooling parameters
+    url.searchParams.delete('connection_limit');
+    url.searchParams.delete('pool_timeout');
+    url.searchParams.delete('pgBouncer');
+    // Add direct connection parameters
+    url.searchParams.set('direct', 'true');
     databaseUrl = url.toString();
   }
 
@@ -27,11 +30,6 @@ const createPrismaClient = () => {
         url: databaseUrl,
       },
     },
-  })
-
-  // Add error handling for connection issues
-  client.$connect().catch((error) => {
-    console.error('Failed to connect to database:', error)
   })
 
   return client
