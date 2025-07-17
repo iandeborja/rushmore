@@ -135,12 +135,32 @@ export default function PlayPage() {
     }
   }, [rushmores, sortBy]);
 
+  const fetchWithRetry = async (url: string, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          return response;
+        }
+        if (i === retries - 1) {
+          throw new Error(`Failed to fetch ${url}: ${response.status}`);
+        }
+      } catch (error) {
+        if (i === retries - 1) {
+          throw error;
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  };
+
   const fetchData = async () => {
     try {
-      // Fetch today's question from the API
-      const questionRes = await fetch("/api/questions/today");
-      if (!questionRes.ok) {
-        throw new Error(`Failed to fetch question: ${questionRes.status}`);
+      // Fetch today's question from the API with retry
+      const questionRes = await fetchWithRetry("/api/questions/today");
+      if (!questionRes) {
+        throw new Error("Failed to fetch question after retries");
       }
       const questionData = await questionRes.json();
       
@@ -151,10 +171,10 @@ export default function PlayPage() {
       
       setQuestion(questionData);
 
-      // Fetch all Rushmores for today
-      const rushmoresRes = await fetch("/api/rushmores");
-      if (!rushmoresRes.ok) {
-        throw new Error(`Failed to fetch rushmores: ${rushmoresRes.status}`);
+      // Fetch all Rushmores for today with retry
+      const rushmoresRes = await fetchWithRetry("/api/rushmores");
+      if (!rushmoresRes) {
+        throw new Error("Failed to fetch rushmores after retries");
       }
       const rushmoresData = await rushmoresRes.json();
       
@@ -176,7 +196,15 @@ export default function PlayPage() {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      showToast("error", "Failed to load today's rushmore");
+      showToast("error", "Failed to load today's rushmore. Please refresh the page.");
+      
+      // Try to set fallback data to prevent total failure
+      if (!question) {
+        setQuestion({ id: "fallback", prompt: "Best comfort foods", date: new Date().toISOString() });
+      }
+      if (!rushmores || rushmores.length === 0) {
+        setRushmores([]);
+      }
     } finally {
       setLoading(false);
     }
