@@ -24,21 +24,17 @@ const sampleQuestions = [
 
 export async function GET() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Try to find today's question
+    // Try to find the most recent question first
     let question = await prisma.question.findFirst({
-      where: {
-        date: {
-          gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
+      orderBy: {
+        date: 'desc'
       },
     });
 
-    // If no question exists for today, create one
+    // If no question exists at all, create one
     if (!question) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const questionIndex = Math.floor(today.getTime() / (24 * 60 * 60 * 1000)) % sampleQuestions.length;
       const prompt = sampleQuestions[questionIndex];
       
