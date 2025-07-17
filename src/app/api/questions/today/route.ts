@@ -5,10 +5,30 @@ const prisma = new PrismaClient();
 
 const fallbackQuestions = [
   "best fast food menu items",
-  "Things that make you feel old",
-  "Best comfort foods",
+  "The worst buzzwords heard at an office",
+  "Movies you have never seen",
+  "Sports mascots",
+  "Stadium Food", 
+  "Places to pull over on a road trip",
+  "Things you'd find in a teenager's room",
+  "Worst first date stories",
   "Things that are overrated",
-  "Best pizza toppings"
+  "Best comfort foods",
+  "Things that make you feel old",
+  "Worst fashion trends",
+  "Things you'd bring to a desert island",
+  "Best pizza toppings",
+  "Things that are underrated",
+  "Things that make you say \"hell yea, it's summer\"",
+  "Best movie sequels",
+  "Worst superhero movies",
+  "Things you'd find in a college dorm",
+  "Best breakfast foods",
+  "Things that are surprisingly expensive",
+  "Worst airplane experiences",
+  "Things you'd do if you won the lottery",
+  "Best childhood snacks",
+  "Things that make you instantly angry"
 ];
 
 export async function GET() {
@@ -31,14 +51,27 @@ export async function GET() {
       console.log("No question found for today, creating fallback question");
       const randomQuestion = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
       
-      const newQuestion = await prisma.question.create({
-        data: {
-          prompt: randomQuestion,
-          date: today,
-        },
-      });
+      try {
+        const newQuestion = await prisma.question.create({
+          data: {
+            prompt: randomQuestion,
+            date: today,
+          },
+        });
 
-      return NextResponse.json(newQuestion);
+        console.log("✅ Created new question for today:", newQuestion.prompt);
+        return NextResponse.json(newQuestion);
+      } catch (createError) {
+        console.error("Error creating fallback question:", createError);
+        // Return a hardcoded question if database creation fails
+        return NextResponse.json({
+          id: 'fallback',
+          prompt: "best fast food menu items",
+          date: today,
+          createdAt: today,
+          updatedAt: today
+        });
+      }
     }
 
     return NextResponse.json(question);
