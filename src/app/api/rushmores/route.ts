@@ -175,7 +175,6 @@ export async function POST(request: NextRequest) {
               select: {
                 name: true,
                 email: true,
-                username: true,
               },
             },
             votes: true,
@@ -261,7 +260,7 @@ export async function GET() {
 
     let rushmores: any[];
     try {
-      rushmores = await Promise.race([
+              rushmores = await Promise.race([
         prisma.rushmore.findMany({
           where: {
             questionId: (question as any).id,
@@ -271,7 +270,6 @@ export async function GET() {
               select: {
                 name: true,
                 email: true,
-                username: true,
               },
             },
             votes: true,
@@ -296,7 +294,7 @@ export async function GET() {
       const downvotes = rushmore.votes?.filter((vote: any) => vote.value === -1).length || 0;
       const totalVotes = upvotes - downvotes;
       const user = rushmore.user;
-      const displayUsername = user.username || user.name || (user.email ? user.email.split('@')[0] : 'user');
+      const displayUsername = user.name || (user.email ? user.email.split('@')[0] : 'user');
       return {
         ...rushmore,
         voteCount: totalVotes,
@@ -305,7 +303,6 @@ export async function GET() {
         user: {
           name: user.name,
           email: user.email,
-          username: user.username,
           displayUsername,
         },
       };
