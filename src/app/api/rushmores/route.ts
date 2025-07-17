@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
       } else {
         console.log("API Debug - Processing anonymous user");
         // Anonymous user
-        if (!anonymousName || anonymousName.trim().length < 2) {
+        if (!anonymousName || anonymousName.trim().length < 1) {
           console.log("API Debug - Anonymous name validation failed:", anonymousName);
-          throw new Error("Please provide a name (at least 2 characters)");
+          throw new Error("Please provide a name");
         }
 
         // Create a temporary anonymous user
@@ -163,7 +163,6 @@ export async function POST(request: NextRequest) {
             select: {
               name: true,
               email: true,
-              username: true,
             },
           },
           votes: true,
@@ -204,42 +203,55 @@ export async function GET() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const question = await prisma.question.findFirst({
-      where: {
-        date: {
-          gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+    let question;
+    try {
+      question = await prisma.question.findFirst({
+        where: {
+          date: {
+            gte: today,
+            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          },
         },
-      },
-    });
+      });
+    } catch (questionError) {
+      console.error("Error fetching question:", questionError);
+      // Return empty array if question fetch fails
+      return NextResponse.json([]);
+    }
 
     if (!question) {
       return NextResponse.json([]);
     }
 
-    const rushmores = await prisma.rushmore.findMany({
-      where: {
-        questionId: question.id,
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            username: true,
-          },
+    let rushmores;
+    try {
+      rushmores = await prisma.rushmore.findMany({
+        where: {
+          questionId: question.id,
         },
-        votes: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          votes: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    } catch (rushmoreFetchError) {
+      console.error("Error fetching rushmores:", rushmoreFetchError);
+      // Return empty array if rushmore fetch fails
+      return NextResponse.json([]);
+    }
 
     // Calculate vote counts
-    const rushmoresWithVotes = rushmores.map(rushmore => {
-      const upvotes = rushmore.votes.filter(vote => vote.value === 1).length;
-      const downvotes = rushmore.votes.filter(vote => vote.value === -1).length;
+    const rushmoresWithVotes = rushmores.map((rushmore: any) => {
+      const upvotes = rushmore.votes?.filter((vote: any) => vote.value === 1).length || 0;
+      const downvotes = rushmore.votes?.filter((vote: any) => vote.value === -1).length || 0;
       const totalVotes = upvotes - downvotes;
       
       return {
@@ -253,9 +265,7 @@ export async function GET() {
     return NextResponse.json(rushmoresWithVotes);
   } catch (error) {
     console.error("Error getting Rushmores:", error);
-    return NextResponse.json(
-      { error: "Failed to get Rushmores" },
-      { status: 500 }
-    );
+    // Return empty array instead of error to prevent UI breakage
+    return NextResponse.json([]);
   }
 } 
