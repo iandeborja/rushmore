@@ -1,14 +1,52 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (!user || !user.hashedPassword) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            username: user.username,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
+      }
+    })
   ],
   session: {
     strategy: "jwt",
@@ -21,32 +59,6 @@ const handler = NextAuth({
     signIn: "/auth/signin"
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        try {
-          // Check if user exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email! },
-          });
-
-          if (!existingUser) {
-            // Create new user
-            await prisma.user.create({
-              data: {
-                email: user.email!,
-                name: user.name || "Anonymous User",
-                image: user.image,
-              },
-            });
-          }
-          return true;
-        } catch (error) {
-          console.error("Error during sign in:", error);
-          return false;
-        }
-      }
-      return true;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

@@ -530,9 +530,9 @@ export default function PlayPage() {
                     sign in
                   </Link>
                   <span className="text-sm text-gray-500 mx-2">|</span>
-                  <Link href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                    sign up
-                  </Link>
+                                     <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
+                      sign up
+                    </Link>
                 </>
               )}
             </div>
