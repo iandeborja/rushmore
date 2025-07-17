@@ -117,7 +117,8 @@ export default function PlayPage() {
     }
 
     try {
-      const response = await fetch("/api/votes", {
+      const email = session.user?.email;
+      const response = await fetch(`/api/votes?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rushmoreId, value }),
@@ -126,6 +127,9 @@ export default function PlayPage() {
       if (response.ok) {
         // Refresh data to get updated vote counts
         fetchData();
+      } else {
+        const error = await response.json();
+        console.error("Vote failed:", error);
       }
     } catch (error) {
       console.error("Error voting:", error);

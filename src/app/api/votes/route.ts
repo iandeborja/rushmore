@@ -6,8 +6,19 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
+    let userEmail: string | undefined;
+    
+    // Try to get session from NextAuth first
     const session = await getServerSession();
-    if (!session?.user?.email) {
+    if (session?.user?.email) {
+      userEmail = session.user.email;
+    } else {
+      // Fallback for mock sessions - get email from query params
+      const { searchParams } = new URL(request.url);
+      userEmail = searchParams.get("email") || undefined;
+    }
+    
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -22,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail },
     });
 
     if (!user) {
