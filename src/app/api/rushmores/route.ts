@@ -110,13 +110,21 @@ export async function POST(request: NextRequest) {
       }
 
       // Create a temporary anonymous user
-      user = await prisma.user.create({
-        data: {
-          name: anonymousName.trim(),
-          email: `anonymous-${Date.now()}@rushmore.local`,
-          hashedPassword: "anonymous",
-        } as any,
-      });
+      try {
+        user = await prisma.user.create({
+          data: {
+            name: anonymousName.trim(),
+            email: `anonymous-${Date.now()}-${Math.random().toString(36).substring(2)}@rushmore.local`,
+          },
+        });
+        console.log("API Debug - Created anonymous user:", user.id);
+      } catch (createUserError) {
+        console.error("API Debug - Error creating anonymous user:", createUserError);
+        return NextResponse.json(
+          { error: "Failed to create anonymous user" },
+          { status: 500 }
+        );
+      }
 
       userId = user.id;
     }
@@ -135,10 +143,10 @@ export async function POST(request: NextRequest) {
         user: {
           select: {
             name: true,
-            username: true,
             email: true,
           },
         },
+        votes: true,
       },
     });
 
@@ -194,7 +202,6 @@ export async function GET() {
         user: {
           select: {
             name: true,
-            username: true,
             email: true,
           },
         },
