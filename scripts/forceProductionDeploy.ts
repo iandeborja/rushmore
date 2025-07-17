@@ -28,29 +28,24 @@ async function forceProductionDeploy() {
       },
     })
     
-    if (!question) {
-      console.log('No question found for today, creating one...')
-      await prisma.question.create({
-        data: {
-          prompt: "things that make you say 'hell yea, it's summer'",
-          date: today
-        }
-      })
-      console.log('Created new question for today')
-    } else {
-      console.log(`Current question: "${question.prompt}"`)
+    if (question) {
+      console.log(`Found existing question: "${question.prompt}"`)
       
-      // Force update the question to trigger cache refresh
-      await prisma.question.update({
-        where: { id: question.id },
-        data: {
-          prompt: "things that make you say 'hell yea, it's summer'",
-          // Add a small change to force cache refresh
-          createdAt: new Date()
-        }
+      // Delete the existing question to force a complete refresh
+      await prisma.question.delete({
+        where: { id: question.id }
       })
-      console.log('Updated question and forced cache refresh')
+      console.log('Deleted existing question')
     }
+    
+    // Create a new question with the correct prompt
+    const newQuestion = await prisma.question.create({
+      data: {
+        prompt: "things that make you say 'hell yea, it's summer'",
+        date: today
+      }
+    })
+    console.log('Created new question with correct prompt')
     
     // Verify the update
     const updatedQuestion = await prisma.question.findFirst({
@@ -62,10 +57,13 @@ async function forceProductionDeploy() {
       },
     })
     
-    console.log('\n✅ Production deployment refresh triggered!')
+    console.log('\n✅ Production deployment refresh completed!')
     console.log(`- Today's question: "${updatedQuestion?.prompt}"`)
     console.log('\nThe production site should now show the updated question.')
-    console.log('If it still shows the old question, try refreshing the browser or waiting a few minutes for the cache to clear.')
+    console.log('If it still shows the old question, the issue might be:')
+    console.log('1. Vercel deployment cache - try redeploying')
+    console.log('2. CDN cache - wait 5-10 minutes')
+    console.log('3. Browser cache - hard refresh (Ctrl+F5)')
     
   } catch (error) {
     console.error('Error forcing production deployment:', error)
