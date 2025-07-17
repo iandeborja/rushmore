@@ -69,12 +69,12 @@ export async function updateUserStreak(userId: string, tx?: TransactionClient): 
     }
   });
 
-  // Check for new achievements
+  // Check for new achievements (always pass db/tx as any)
   const newAchievements = await checkAndAwardAchievements(userId, {
     currentStreak: newCurrentStreak,
     longestStreak: newLongestStreak,
     totalDaysPlayed: newTotalDaysPlayed,
-  });
+  }, db as any);
 
   return {
     currentStreak: newCurrentStreak,
@@ -89,14 +89,14 @@ async function checkAndAwardAchievements(userId: string, stats: {
   currentStreak: number;
   longestStreak: number;
   totalDaysPlayed: number;
-}): Promise<string[]> {
+}, db: any): Promise<string[]> {
   const newAchievements: string[] = [];
 
   // Get all achievements
-  const allAchievements = await prisma.achievement.findMany();
+  const allAchievements = await db.achievement.findMany();
   
   // Get user's current achievements
-  const userAchievements = await prisma.userAchievement.findMany({
+  const userAchievements = await db.userAchievement.findMany({
     where: { userId },
     include: { achievement: true }
   });
@@ -130,7 +130,7 @@ async function checkAndAwardAchievements(userId: string, stats: {
     }
 
     if (shouldAward) {
-      await prisma.userAchievement.create({
+      await db.userAchievement.create({
         data: {
           userId,
           achievementId: achievement.id,
