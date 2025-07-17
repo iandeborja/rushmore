@@ -29,7 +29,9 @@ interface Question {
 }
 
 export default function RushmorePage({ params }: { params: Promise<{ id: string }> }) {
-  const { data: session, status } = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext?.data;
+  const status = sessionContext?.status;
   const { showToast } = useToast();
   const [rushmore, setRushmore] = useState<Rushmore | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
