@@ -59,117 +59,140 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let user;
-    let userId;
+    // Create everything in a single transaction
+    const result = await prisma.$transaction(async (tx) => {
+      let user;
+      let userId;
 
-    if (session?.user?.email || userEmail) {
-      const email = session?.user?.email || userEmail!;
-      console.log("API Debug - Processing logged in user:", email);
-      // Logged in user
-      user = await prisma.user.findUnique({
-        where: { email },
-      });
+      if (userEmail) {
+        console.log("API Debug - Processing logged in user:", userEmail);
+        // Logged in user
+        // Find or create user
+        console.log("API Debug - Looking for user with email:", userEmail);
+        user = await tx.user.findUnique({
+          where: { email: userEmail },
+        });
+        console.log("API Debug - User lookup result:", user ? `Found user ${user.id}` : "No user found");
 
-      // If user doesn't exist, create one with name from session or 'idb'
-      if (!user) {
-        let userName = session?.user?.name || "mt. testmore";
-        console.log("API Debug - Creating new user with name:", userName);
-        user = await prisma.user.create({
-          data: {
-            email,
-            name: userName,
+        // If user doesn't exist, create one with name from session or 'idb'
+        if (!user) {
+          let userName = session?.user?.name || "mt. testmore";
+          console.log("API Debug - Creating new user with name:", userName);
+          try {
+            user = await tx.user.create({
+              data: {
+                email: userEmail,
+                name: userName,
+              },
+            });
+            console.log("API Debug - Successfully created user:", user.id, user.email);
+          } catch (userCreateError) {
+            console.error("API Debug - Error creating user:", userCreateError);
+            throw userCreateError;
+          }
+        } else {
+          console.log("API Debug - Found existing user:", user.id, user.email);
+        }
+
+        // Check if user already submitted for today
+        console.log("API Debug - Checking for existing rushmore for user:", user.id, "and question:", question.id);
+        
+        // Debug: Check all rushmores for this user
+        const allUserRushmores = await tx.rushmore.findMany({
+          where: { userId: user.id },
+        });
+        console.log("API Debug - All rushmores for user:", allUserRushmores.length, allUserRushmores.map(r => r.id));
+        
+        const existingRushmore = await tx.rushmore.findFirst({
+          where: {
+            userId: user.id,
+            questionId: question.id,
           },
         });
+        console.log("API Debug - Existing rushmore check result:", existingRushmore ? `Found rushmore ${existingRushmore.id}` : "No existing rushmore");
+
+        if (existingRushmore) {
+          console.log("API Debug - User already submitted for today");
+          throw new Error("You already submitted a Rushmore for today");
+        }
+
+        userId = user.id;
+      } else {
+        console.log("API Debug - Processing anonymous user");
+        // Anonymous user
+        if (!anonymousName || anonymousName.trim().length < 2) {
+          console.log("API Debug - Anonymous name validation failed:", anonymousName);
+          throw new Error("Please provide a name (at least 2 characters)");
+        }
+
+        // Create a temporary anonymous user
+        try {
+          user = await tx.user.create({
+            data: {
+              name: anonymousName.trim(),
+              email: `anonymous-${Date.now()}-${Math.random().toString(36).substring(2)}@rushmore.local`,
+            },
+          });
+          console.log("API Debug - Created anonymous user:", user.id);
+        } catch (createUserError) {
+          console.error("API Debug - Error creating anonymous user:", createUserError);
+          throw createUserError;
+        }
+
+        userId = user.id;
       }
 
-      // Check if user already submitted for today
-      const existingRushmore = await prisma.rushmore.findFirst({
-        where: {
-          userId: user.id,
+      // Update user streak
+      console.log("API Debug - Updating user streak for:", userId);
+      await updateUserStreak(userId, tx);
+      console.log("API Debug - User streak updated successfully");
+
+      // Create Rushmore
+      console.log("API Debug - Creating rushmore for user:", userId, "question:", question.id);
+      const rushmore = await tx.rushmore.create({
+        data: {
+          userId,
           questionId: question.id,
+          item1,
+          item2,
+          item3,
+          item4,
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+              username: true,
+            },
+          },
+          votes: true,
         },
       });
+      console.log("API Debug - Successfully created rushmore:", rushmore.id);
 
-      if (existingRushmore) {
-        return NextResponse.json(
-          { error: "You already submitted a Rushmore for today" },
-          { status: 400 }
-        );
-      }
-
-      userId = user.id;
-    } else {
-      console.log("API Debug - Processing anonymous user");
-      // Anonymous user
-      if (!anonymousName || anonymousName.trim().length < 2) {
-        console.log("API Debug - Anonymous name validation failed:", anonymousName);
-        return NextResponse.json(
-          { error: "Please provide a name (at least 2 characters)" },
-          { status: 400 }
-        );
-      }
-
-      // Create a temporary anonymous user
-      try {
-        user = await prisma.user.create({
-          data: {
-            name: anonymousName.trim(),
-            email: `anonymous-${Date.now()}-${Math.random().toString(36).substring(2)}@rushmore.local`,
-          },
-        });
-        console.log("API Debug - Created anonymous user:", user.id);
-      } catch (createUserError) {
-        console.error("API Debug - Error creating anonymous user:", createUserError);
-        return NextResponse.json(
-          { error: "Failed to create anonymous user" },
-          { status: 500 }
-        );
-      }
-
-      userId = user.id;
-    }
-
-    // Create Rushmore
-    const rushmore = await prisma.rushmore.create({
-      data: {
-        userId,
-        questionId: question.id,
-        item1,
-        item2,
-        item3,
-        item4,
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        votes: true,
-      },
+      return rushmore;
     });
 
-    // Update user streak and check for achievements
-    let streakUpdate = null;
-    let newAchievements: string[] = [];
-    
-    try {
-      streakUpdate = await updateUserStreak(userId);
-      newAchievements = streakUpdate.newAchievements;
-    } catch (error) {
-      console.error("Error updating streak:", error);
-    }
-
-    return NextResponse.json({
-      ...rushmore,
-      streakUpdate,
-      newAchievements,
-    }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    console.error("Error creating Rushmore:", error);
+    console.error("API Debug - Transaction failed:", error);
+    if (error instanceof Error) {
+      if (error.message === "You already submitted a Rushmore for today") {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 }
+        );
+      }
+      if (error.message === "Please provide a name (at least 2 characters)") {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 }
+        );
+      }
+    }
     return NextResponse.json(
-      { error: "Failed to create Rushmore" },
+      { error: "Failed to create rushmore", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -203,6 +226,7 @@ export async function GET() {
           select: {
             name: true,
             email: true,
+            username: true,
           },
         },
         votes: true,

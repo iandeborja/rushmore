@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CountdownTimer from "@/components/CountdownTimer";
 
 interface Question {
   id: string;
@@ -125,13 +126,9 @@ export default function PlayPage() {
 
   const fetchData = async () => {
     try {
-      // Set today's question (manually updated)
-      const questionData = {
-        id: "today",
-        prompt: "best fast food menu items",
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      };
+      // Fetch today's question from the API
+      const questionRes = await fetch("/api/questions/today");
+      const questionData = await questionRes.json();
       setQuestion(questionData);
 
       // Fetch all Rushmores for today
@@ -535,7 +532,13 @@ export default function PlayPage() {
             <h1 className="text-3xl font-light mb-4 lowercase tracking-wide text-gray-800">today's rushmore</h1>
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
           </div>
-          <p className="text-2xl text-center italic text-gray-700 lowercase leading-relaxed">"{question?.prompt}"</p>
+          <p className="text-2xl text-center italic text-gray-700 lowercase leading-relaxed mb-6">"{question?.prompt}"</p>
+          
+          {/* Countdown Timer */}
+          <CountdownTimer onReset={() => {
+            // Refresh data when reset happens
+            fetchData();
+          }} />
         </div>
 
         {/* Submit Form */}

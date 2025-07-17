@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -10,8 +10,12 @@ export interface StreakUpdate {
   newAchievements: string[];
 }
 
-export async function updateUserStreak(userId: string): Promise<StreakUpdate> {
-  const user = await prisma.user.findUnique({
+type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+
+export async function updateUserStreak(userId: string, tx?: TransactionClient): Promise<StreakUpdate> {
+  const db = tx || prisma;
+  
+  const user = await db.user.findUnique({
     where: { id: userId },
     include: {
       achievements: {
@@ -56,7 +60,7 @@ export async function updateUserStreak(userId: string): Promise<StreakUpdate> {
   const newLongestStreak = Math.max(user.longestStreak, newCurrentStreak);
 
   // Update user
-  await prisma.user.update({
+  await db.user.update({
     where: { id: userId },
     data: {
       currentStreak: newCurrentStreak,

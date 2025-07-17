@@ -3,34 +3,27 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Sample questions for the MVP
-const sampleQuestions = [
-  "best fast food menu items",
-  "The worst buzzwords heard at an office",
-  "Movies you have never seen",
-  "Sports mascots",
-  "Stadium Food",
-  "Places to pull over on a road trip",
-  "Things you'd find in a teenager's room",
-  "Worst first date stories",
-  "Things that are overrated",
-  "Best comfort foods",
-  "Things that make you feel old",
-  "Worst fashion trends",
-  "Things you'd bring to a desert island",
-  "Best pizza toppings",
-  "Things that are underrated"
-];
-
 export async function GET() {
   try {
-    // For now, just return a hardcoded question to get the app working
-    const question = {
-      id: "temp-id",
-      prompt: "best fast food menu items",
-      date: new Date(),
-      createdAt: new Date()
-    };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find today's question from the database
+    const question = await prisma.question.findFirst({
+      where: {
+        date: {
+          gte: today,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+    if (!question) {
+      return NextResponse.json(
+        { error: "No question found for today" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(question);
   } catch (error) {
