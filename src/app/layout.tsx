@@ -18,9 +18,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "rushmore",
   description: "what's on your mt. rushmore?",
+  metadataBase: new URL('https://myrushmore.xyz'),
   openGraph: {
     title: "rushmore",
     description: "what's on your mt. rushmore?",
+    url: 'https://myrushmore.xyz',
+    siteName: 'rushmore',
     images: [
       {
         url: '/rushmore_OG.png',
@@ -29,6 +32,8 @@ export const metadata: Metadata = {
         alt: 'Rushmore - What\'s your Mt. Rushmore?',
       },
     ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
@@ -56,7 +61,7 @@ export default function RootLayout({
       <head>
         <Script
           defer
-          data-domain="rushmore.vercel.app"
+          data-domain="myrushmore.xyz"
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />
