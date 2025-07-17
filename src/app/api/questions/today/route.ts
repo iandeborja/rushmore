@@ -34,15 +34,33 @@ export async function GET() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find today's question from the database
-    const question = await prisma.question.findFirst({
-      where: {
-        date: {
-          gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    });
+    // Find today's question from the database with timeout
+    let question;
+    try {
+      question = await Promise.race([
+        prisma.question.findFirst({
+          where: {
+            date: {
+              gte: today,
+              lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timeout')), 10000)
+        )
+      ]);
+    } catch (dbError) {
+      console.error("Database query failed:", dbError);
+      // Return fallback question if database is unavailable
+      return NextResponse.json({
+        id: 'fallback',
+        prompt: "best fast food menu items",
+        date: today,
+        createdAt: today,
+        updatedAt: today
+      });
+    }
 
     if (!question) {
       // Create a fallback question if none exists
@@ -75,9 +93,17 @@ export async function GET() {
     return NextResponse.json(question);
   } catch (error) {
     console.error("Error getting today's question:", error);
-    return NextResponse.json(
-      { error: "Failed to get today's question" },
-      { status: 500 }
-    );
+    
+    // Return fallback question instead of error
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return NextResponse.json({
+      id: 'fallback',
+      prompt: "best fast food menu items",
+      date: today,
+      createdAt: today,
+      updatedAt: today
+    });
   }
 } 

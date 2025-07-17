@@ -10,7 +10,7 @@ const createPrismaClient = () => {
     throw new Error('DATABASE_URL is required in production')
   }
 
-  return new PrismaClient({
+  const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
@@ -18,8 +18,22 @@ const createPrismaClient = () => {
       },
     },
   })
+
+  // Add error handling for connection issues
+  client.$connect().catch((error) => {
+    console.error('Failed to connect to database:', error)
+  })
+
+  return client
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma 
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// Add connection cleanup for production
+if (process.env.NODE_ENV === 'production') {
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect()
+  })
+} 

@@ -3,8 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
+    // Test database connection with timeout
+    const dbTest = await Promise.race([
+      prisma.$queryRaw`SELECT 1`,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+      )
+    ]);
     
     // Get environment info (without sensitive data)
     const envInfo = {
@@ -22,10 +27,27 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Health check failed:", error);
+    
+    // Provide more specific error information
+    let errorMessage = "Unknown error";
+    let errorType = "unknown";
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      if (error.message.includes("prepared statement")) {
+        errorType = "connection_pooling";
+      } else if (error.message.includes("timeout")) {
+        errorType = "connection_timeout";
+      } else if (error.message.includes("DATABASE_URL")) {
+        errorType = "missing_env";
+      }
+    }
+    
     return NextResponse.json(
       {
         status: "unhealthy",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
+        errorType,
         timestamp: new Date().toISOString(),
       },
       { status: 500 }
