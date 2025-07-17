@@ -168,10 +168,14 @@ export default function PlayPage() {
         ...(session ? {} : { anonymousName: formData.anonymousName })
       };
 
+      console.log("Submitting data:", submissionData);
+
       // Add user email to URL for mock sessions
       const url = session?.user?.email 
         ? `/api/rushmores?email=${encodeURIComponent(session.user.email)}`
         : "/api/rushmores";
+        
+      console.log("Submitting to URL:", url);
         
       const response = await fetch(url, {
         method: "POST",
@@ -179,8 +183,12 @@ export default function PlayPage() {
         body: JSON.stringify(submissionData),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
       if (response.ok) {
         const newRushmore = await response.json();
+        console.log("Success! New rushmore:", newRushmore);
         setUserRushmore(newRushmore);
         setRushmores([newRushmore, ...rushmores]);
         setFormData({ item1: "", item2: "", item3: "", item4: "", anonymousName: "" });
@@ -201,6 +209,7 @@ export default function PlayPage() {
         }
       } else {
         const error = await response.json();
+        console.log("Error response:", error);
         if (error.bannedWords) {
           showToast("error", `${error.error} Banned words found: ${error.bannedWords.join(', ')}`);
         } else {
@@ -536,25 +545,29 @@ export default function PlayPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {!session && (
                 <div>
-                                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
-                  your guest name
-                </label>
+                  <label htmlFor="anonymousName" className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                    your guest name
+                  </label>
                   <input
+                    id="anonymousName"
+                    name="anonymousName"
                     type="text"
                     value={formData.anonymousName}
                     onChange={(e) => setFormData({ ...formData, anonymousName: e.target.value })}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent lowercase transition-all duration-200 hover:border-gray-400"
-                                          placeholder="enter your guest name"
+                    placeholder="enter your guest name"
                   />
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                  <label htmlFor="item1" className="block text-sm font-light text-gray-700 mb-2 lowercase">
                     #1
                   </label>
                   <input
+                    id="item1"
+                    name="item1"
                     type="text"
                     value={formData.item1}
                     onChange={(e) => setFormData({ ...formData, item1: e.target.value })}
@@ -564,10 +577,12 @@ export default function PlayPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                  <label htmlFor="item2" className="block text-sm font-light text-gray-700 mb-2 lowercase">
                     #2
                   </label>
                   <input
+                    id="item2"
+                    name="item2"
                     type="text"
                     value={formData.item2}
                     onChange={(e) => setFormData({ ...formData, item2: e.target.value })}
@@ -577,10 +592,12 @@ export default function PlayPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                  <label htmlFor="item3" className="block text-sm font-light text-gray-700 mb-2 lowercase">
                     #3
                   </label>
                   <input
+                    id="item3"
+                    name="item3"
                     type="text"
                     value={formData.item3}
                     onChange={(e) => setFormData({ ...formData, item3: e.target.value })}
@@ -590,10 +607,12 @@ export default function PlayPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                  <label htmlFor="item4" className="block text-sm font-light text-gray-700 mb-2 lowercase">
                     #4
                   </label>
                   <input
+                    id="item4"
+                    name="item4"
                     type="text"
                     value={formData.item4}
                     onChange={(e) => setFormData({ ...formData, item4: e.target.value })}
