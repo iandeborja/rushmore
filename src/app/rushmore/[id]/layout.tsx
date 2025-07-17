@@ -37,9 +37,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       };
     }
 
-    // Fetch question data
-    const questionRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/questions/today`);
-    const questionData = await questionRes.json();
+    // Set today's question (manually updated)
+    const questionData = {
+      id: "today",
+      prompt: "best fast food menu items",
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
 
     const title = `${rushmore.user.name}'s "${questionData.prompt}" mt. rushmore`;
     const description = `check out this ${questionData.prompt} mt. rushmore: 1. ${rushmore.item1} 2. ${rushmore.item2} 3. ${rushmore.item3} 4. ${rushmore.item4}`;

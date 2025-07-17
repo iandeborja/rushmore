@@ -1,7 +1,7 @@
 "use client";
 
 // 🎯 TODAY'S QUESTION: Change this in the fetchData function around line 118
-// Current question: "best pizza toppings"
+// Current question: "best fast food menu items"
 
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "@/components/Providers";
@@ -119,7 +119,7 @@ export default function PlayPage() {
       // Set today's question (manually updated)
       const questionData = {
         id: "today",
-        prompt: "best pizza toppings",
+        prompt: "best fast food menu items",
         date: new Date().toISOString(),
         createdAt: new Date().toISOString()
       };

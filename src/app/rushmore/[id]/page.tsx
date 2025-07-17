@@ -66,9 +66,13 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
       
       setRushmore(foundRushmore);
 
-      // Fetch today's question
-      const questionRes = await fetch("/api/questions/today");
-      const questionData = await questionRes.json();
+      // Set today's question (manually updated)
+      const questionData = {
+        id: "today",
+        prompt: "best fast food menu items",
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
       setQuestion(questionData);
     } catch (error) {
       console.error("Error fetching rushmore:", error);
