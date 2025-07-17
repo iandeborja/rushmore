@@ -75,6 +75,24 @@ async function ensureTodayQuestion() {
     };
   } catch (error) {
     console.error('❌ Error ensuring today\'s question:', error);
+    
+    // Check if this is a database connection error
+    if (error instanceof Error && (
+      error.message.includes('Can\'t reach database server') ||
+      error.message.includes('database server is running') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('ENOTFOUND')
+    )) {
+      console.log('⚠️  Database connection failed during build - this is expected during deployment');
+      console.log('⚠️  The question will be created at runtime when the application starts');
+      return {
+        success: false,
+        question: null,
+        created: false,
+        reason: 'database_connection_failed'
+      };
+    }
+    
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -86,6 +104,10 @@ if (require.main === module) {
   ensureTodayQuestion()
     .then((result) => {
       console.log('Result:', result);
+      // Don't exit with error code if database connection failed during build
+      if (result.reason === 'database_connection_failed') {
+        process.exit(0);
+      }
       process.exit(0);
     })
     .catch((error) => {
