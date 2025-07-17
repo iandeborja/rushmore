@@ -14,7 +14,10 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
 export { useSession } from "next-auth/react";
 
 export function Providers({ children }: { children: ReactNode }) {
-  const useMockSession = process.env.NEXT_PUBLIC_USE_MOCK_SESSION === "true";
+  // In production, always use real sessions
+  // In development, check for mock session flag
+  const isProduction = process.env.NODE_ENV === 'production';
+  const useMockSession = isProduction ? false : process.env.NEXT_PUBLIC_USE_MOCK_SESSION === "true";
   
   if (useMockSession) {
     return <MockSessionProvider>{children}</MockSessionProvider>;

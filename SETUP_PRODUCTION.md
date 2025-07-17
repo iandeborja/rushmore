@@ -33,12 +33,7 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-### 4. Disable Mock Sessions
-```
-NEXT_PUBLIC_USE_MOCK_SESSION=false
-```
-
-### 5. Prisma Data Proxy (for pooled connections)
+### 4. Prisma Data Proxy (for pooled connections)
 ```
 PRISMA_CLIENT_ENGINE_TYPE=dataproxy
 ```
@@ -72,8 +67,8 @@ In your Vercel dashboard:
 1. Go to your project settings
 2. Navigate to "Environment Variables"
 3. Add all the variables listed above
-4. Make sure to set `NEXT_PUBLIC_USE_MOCK_SESSION=false`
-5. **Important**: Use the pooled connection string for `DATABASE_URL`
+4. **Important**: Use the pooled connection string for `DATABASE_URL`
+5. **Note**: You don't need to set `NEXT_PUBLIC_USE_MOCK_SESSION` - it's automatically handled in production
 
 ## Step 4: Deploy the Changes
 
