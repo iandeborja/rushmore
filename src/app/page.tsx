@@ -55,7 +55,7 @@ export default function Home() {
             </Link>
             <span className="text-gray-400">|</span>
             <Link 
-              href="/auth/signup" 
+              href="/auth/signin" 
               className="text-blue-700 hover:text-blue-800 font-medium lowercase transition-colors duration-200 hover:underline"
             >
               sign up
