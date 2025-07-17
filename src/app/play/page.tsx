@@ -553,7 +553,7 @@ export default function PlayPage() {
         {/* Submit Form */}
         {!userRushmore && (
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift" style={{animationDelay: '0.2s'}}>
-            <h2 className="text-2xl font-light mb-6 lowercase tracking-wide text-gray-800">what's on your "{question?.prompt}" mt. rushmore?</h2>
+            <h2 className="text-2xl font-light mb-6 lowercase tracking-wide text-gray-800">what's your "{question?.prompt}" mt. rushmore?</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               {!session && (
                 <div>
