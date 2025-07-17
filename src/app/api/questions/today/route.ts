@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // Sample questions for the MVP
 const sampleQuestions = [
-  "best fast food restaurant items",
+  "best fast food menu items",
   "The worst buzzwords heard at an office",
   "Movies you have never seen",
   "Sports mascots",

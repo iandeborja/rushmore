@@ -1,6 +1,6 @@
 "use client";
 
-// 🎯 TODAY'S QUESTION: Change this in the fetchData function around line 118
+// 🎯 TODAY'S QUESTION: Change this in the API at /api/questions/today/route.ts
 // Current question: "best fast food menu items"
 
 import { useState, useEffect, useMemo } from "react";
@@ -23,6 +23,7 @@ interface Rushmore {
   item4: string;
   user: {
     name: string;
+    username: string;
     email: string;
   };
   voteCount: number;
@@ -37,6 +38,7 @@ interface Comment {
   rushmoreId: string;
   user: {
     name: string;
+    username: string;
     email: string;
   };
   createdAt: string;
@@ -48,6 +50,14 @@ export default function PlayPage() {
   const status = sessionContext?.status;
   const { showToast } = useToast();
   const router = useRouter();
+
+  // Redirect to username setup if user is signed in but doesn't have a username
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user && !session.user.username) {
+      router.push("/setup-username");
+    }
+  }, [session, status, router]);
   const [question, setQuestion] = useState<Question | null>(null);
   const [rushmores, setRushmores] = useState<Rushmore[]>([]);
   const [userRushmore, setUserRushmore] = useState<Rushmore | null>(null);
@@ -247,7 +257,7 @@ export default function PlayPage() {
 
   const shareRushmore = (rushmore: Rushmore) => {
     const url = `${window.location.origin}/rushmore/${rushmore.id}`;
-    const title = `${rushmore.user.name}'s "${question?.prompt}" mt. rushmore`;
+    const title = `@${rushmore.user.username}'s "${question?.prompt}" mt. rushmore`;
     const text = `check out this ${question?.prompt} mt. rushmore`;
 
     // Try to use native sharing if available
@@ -673,7 +683,7 @@ export default function PlayPage() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-500 lowercase">#{index + 1}</span>
-                        <span className="font-medium text-gray-800 lowercase">{rushmore.user.name}</span>
+                        <span className="font-medium text-gray-800 lowercase">@{rushmore.user.username}</span>
                         {session && session.user?.email !== rushmore.user.email && (
                           <button
                             onClick={() => following[rushmore.user.email] 

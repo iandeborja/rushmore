@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
         user: {
           select: {
             name: true,
+            username: true,
             email: true,
           },
         },
@@ -193,6 +194,7 @@ export async function GET() {
         user: {
           select: {
             name: true,
+            username: true,
             email: true,
           },
         },

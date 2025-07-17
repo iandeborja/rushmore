@@ -37,19 +37,12 @@ export default function Home() {
 
         {/* Auth Links */}
         <div className="text-center animate-fade-in" style={{animationDelay: '0.3s'}}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col items-center justify-center gap-4 mb-4">
             <Link 
               href="/auth/signin" 
               className="text-blue-700 hover:text-blue-800 font-medium lowercase transition-colors duration-200 hover:underline"
             >
-              sign in
-            </Link>
-            <span className="text-gray-400 hidden sm:block">|</span>
-            <Link 
-              href="/auth/signup" 
-              className="text-blue-700 hover:text-blue-800 font-medium lowercase transition-colors duration-200 hover:underline"
-            >
-              sign up
+              sign in with google
             </Link>
           </div>
           <p className="text-gray-500 text-sm lowercase italic">
