@@ -17,29 +17,34 @@ const handler = NextAuth({
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        }) as any;
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          }) as any;
 
-        if (!user || !user.hashedPassword) {
+          if (!user || !user.hashedPassword) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            username: user.username,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
           return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          username: user.username,
-        };
       }
     })
   ],

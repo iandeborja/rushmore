@@ -98,8 +98,19 @@ export default function PlayPage() {
       
       // Fetch friends
       fetch(`/api/friends?email=${encodeURIComponent(session.user.email)}`)
-        .then(res => res.json())
-        .then(setFriends)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch friends: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          const friendsArray = Array.isArray(data) ? data : [];
+          setFriends(friendsArray);
+        })
         .catch(() => setFriends([]));
     } else {
       setUserStats(null);
@@ -142,12 +153,23 @@ export default function PlayPage() {
 
       // Fetch all Rushmores for today
       const rushmoresRes = await fetch("/api/rushmores");
+      if (!rushmoresRes.ok) {
+        throw new Error(`Failed to fetch rushmores: ${rushmoresRes.status}`);
+      }
       const rushmoresData = await rushmoresRes.json();
-      setRushmores(rushmoresData);
+      
+      // Check if the response contains an error
+      if (rushmoresData.error) {
+        throw new Error(rushmoresData.error);
+      }
+      
+      // Ensure rushmoresData is an array
+      const rushmoresArray = Array.isArray(rushmoresData) ? rushmoresData : [];
+      setRushmores(rushmoresArray);
 
       // Find user's Rushmore if logged in
       if (session?.user?.email) {
-        const userRushmore = rushmoresData.find(
+        const userRushmore = rushmoresArray.find(
           (r: Rushmore) => r.user.email === session.user?.email
         );
         setUserRushmore(userRushmore);
