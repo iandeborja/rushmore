@@ -1,14 +1,22 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
+import { SessionProvider } from "next-auth/react";
 
-const MockSessionContext = createContext(null);
+interface MockSessionContextType {
+  data: any;
+  status: string;
+  setLoggedIn: (value: boolean | ((prev: boolean) => boolean)) => void;
+}
 
-export function MockSessionProvider({ children }) {
+const MockSessionContext = createContext<MockSessionContextType | null>(null);
+
+export function MockSessionProvider({ children }: { children: ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(true);
   const mockSession = loggedIn
     ? {
         user: {
+          id: "mock-user-id",
           name: "mt. testmore",
           email: "test@example.com",
         },
@@ -39,4 +47,14 @@ export function MockSessionProvider({ children }) {
 
 export function useSession() {
   return useContext(MockSessionContext);
+}
+
+export function Providers({ children, session }: { children: ReactNode; session?: any }) {
+  const useMockSession = process.env.NEXT_PUBLIC_USE_MOCK_SESSION === "true";
+  
+  if (useMockSession) {
+    return <MockSessionProvider>{children}</MockSessionProvider>;
+  }
+  
+  return <SessionProvider session={session}>{children}</SessionProvider>;
 } 
