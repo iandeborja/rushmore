@@ -96,7 +96,9 @@ export default function LeaderboardPage() {
           
           {rushmores.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">🏆</div>
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-gray-400 text-2xl">▲</span>
+              </div>
               <p className="text-gray-500 lowercase text-lg">no rushmores submitted yet.</p>
             </div>
           ) : (
@@ -120,7 +122,7 @@ export default function LeaderboardPage() {
                         index === 2 ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 
                         'bg-gradient-to-r from-blue-500 to-indigo-500'
                       }`}>
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        {index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : index + 1}
                       </div>
                       <div>
                         <h3 className="font-light text-xl lowercase text-gray-800">{rushmore.user.name}</h3>

@@ -17,36 +17,22 @@ export default function Home() {
             rushmore
           </h1>
           <p className="text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed lowercase">
-            what's your mt. rushmore? every day, answer a new question by picking your top 4. 
+            
             <span className="block mt-2 text-lg font-medium text-gray-800">
-              play instantly or sign up to vote and save your rushmores!
+              create and vote for daily top 4 lists
             </span>
           </p>
         </div>
 
-        {/* Today's Question Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift border border-white/20">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-light lowercase tracking-wide text-gray-800 mb-2">today's question</h2>
-            <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
-          </div>
-          <p className="text-2xl italic lowercase text-gray-700 text-center mb-8 leading-relaxed">
-            "the best things to bring to a bbq"
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link 
-              href="/play" 
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-6 py-4 text-center font-light hover:from-blue-700 hover:to-blue-800 transition-all duration-200 lowercase tracking-wide shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              🎯 play today's rushmore
-            </Link>
-            <Link 
-              href="/leaderboard" 
-              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl px-6 py-4 text-center font-light hover:from-green-700 hover:to-green-800 transition-all duration-200 lowercase tracking-wide shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              🏆 view leaderboard
-            </Link>
-          </div>
+        {/* Main Call-to-Action Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift">
+          <Link 
+            href="/play" 
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-6 py-4 text-center font-light hover:from-blue-700 hover:to-blue-800 transition-all duration-200 lowercase tracking-wide shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">●</span>
+            play
+          </Link>
         </div>
 
         {/* Auth Links */}
@@ -74,17 +60,23 @@ export default function Home() {
         {/* Features preview */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in" style={{animationDelay: '0.6s'}}>
           <div className="text-center p-4">
-            <div className="text-3xl mb-2">🎯</div>
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-blue-600 text-xl font-light">●</span>
+            </div>
             <h3 className="font-medium lowercase text-gray-800 mb-1">daily questions</h3>
             <p className="text-sm text-gray-600 lowercase">fresh challenges every day</p>
           </div>
           <div className="text-center p-4">
-            <div className="text-3xl mb-2">🏆</div>
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-green-600 text-xl font-light">▲</span>
+            </div>
             <h3 className="font-medium lowercase text-gray-800 mb-1">vote & compete</h3>
             <p className="text-sm text-gray-600 lowercase">see how you rank</p>
           </div>
           <div className="text-center p-4">
-            <div className="text-3xl mb-2">💾</div>
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-purple-600 text-xl font-light">◆</span>
+            </div>
             <h3 className="font-medium lowercase text-gray-800 mb-1">save & share</h3>
             <p className="text-sm text-gray-600 lowercase">keep your favorites</p>
           </div>
@@ -93,7 +85,15 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-16 text-gray-500 text-sm lowercase animate-fade-in" style={{animationDelay: '0.9s'}}>
-        &copy; {new Date().getFullYear()} rushmore
+        &copy; {new Date().getFullYear()} rushmore • created by{" "}
+        <a 
+          href="https://twitter.com/iandeborja_" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 transition-colors duration-200 hover:underline"
+        >
+          ian de borja
+        </a>
       </footer>
     </div>
   );

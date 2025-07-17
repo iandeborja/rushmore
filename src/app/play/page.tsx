@@ -42,10 +42,19 @@ export default function PlayPage() {
     item4: "",
     anonymousName: "",
   });
+  const [userStats, setUserStats] = useState(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (session?.user?.email) {
+      fetch(`/api/user-stats?email=${encodeURIComponent(session.user.email)}`)
+        .then(res => res.json())
+        .then(setUserStats)
+        .catch(() => setUserStats(null));
+    } else {
+      setUserStats(null);
+    }
+  }, [session?.user?.email]);
 
   const fetchData = async () => {
     try {
@@ -124,9 +133,36 @@ export default function PlayPage() {
   };
 
   const shareRushmore = (rushmore: Rushmore) => {
-    const text = `My Mt. Rushmore for "${question?.prompt}":\n1. ${rushmore.item1}\n2. ${rushmore.item2}\n3. ${rushmore.item3}\n4. ${rushmore.item4}\n\nPlay at Rushmore!`;
-    navigator.clipboard.writeText(text);
-    alert("Rushmore copied to clipboard!");
+    const prompt = (question?.prompt ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    const shareText = `my ${prompt} mt. rushmore:\n1. ${rushmore.item1.toLowerCase()}\n2. ${rushmore.item2.toLowerCase()}\n3. ${rushmore.item3.toLowerCase()}\n4. ${rushmore.item4.toLowerCase()}\n\nplay at rushmore.vercel.app`;
+
+    // Try to use native sharing if available
+    if (navigator.share) {
+      navigator.share({
+        text: shareText
+      }).catch(() => {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(shareText);
+        showShareSuccess();
+      });
+    } else {
+      // Fallback to clipboard
+      navigator.clipboard.writeText(shareText);
+      showShareSuccess();
+    }
+  };
+
+  const showShareSuccess = () => {
+    // Create a temporary success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    successDiv.textContent = 'rushmore copied to clipboard!';
+    document.body.appendChild(successDiv);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      successDiv.remove();
+    }, 3000);
   };
 
   if (loading) {
@@ -149,10 +185,10 @@ export default function PlayPage() {
             <span className="text-lg">←</span> back to home
           </Link>
           <div className="flex items-center gap-6">
-            <Link href="/leaderboard" className="text-blue-600 hover:text-blue-800 transition-colors duration-200 font-light lowercase tracking-wide hover:underline">
-              🏆 leaderboard
+            <Link href="/leaderboard" className="text-blue-600 hover:text-blue-800 transition-colors duration-200 font-light lowercase tracking-wide hover:underline flex items-center gap-2">
+              <span className="text-sm">▲</span> leaderboard
             </Link>
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end gap-1">
               {session ? (
                 <>
                   <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.name}</p>
@@ -175,8 +211,44 @@ export default function PlayPage() {
           </div>
         </div>
 
+        {/* User Stats */}
+        {session && (
+          <div className="mb-8">
+            <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col sm:flex-row gap-6 items-center justify-between">
+              <div>
+                <div className="text-lg font-light text-gray-700 lowercase">your stats</div>
+                <div className="flex gap-6 mt-2">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-700">45</div>
+                    <div className="text-xs text-gray-500">rushmores</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-700">267</div>
+                    <div className="text-xs text-gray-500">votes cast</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-purple-700">832</div>
+                    <div className="text-xs text-gray-500">upvotes received</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-orange-700">45</div>
+                    <div className="text-xs text-gray-500">days played</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400">last played</div>
+                <div className="text-lg text-gray-700">July 16, 2025</div>
+                <div className="mt-2 text-xs text-gray-500">
+                  best rushmore upvotes: 200
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Today's Question */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift border border-white/20">
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-light mb-4 lowercase tracking-wide text-gray-800">today's question</h1>
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
@@ -186,16 +258,8 @@ export default function PlayPage() {
 
         {/* Submit Form */}
         {!userRushmore && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift border border-white/20" style={{animationDelay: '0.2s'}}>
-            <h2 className="text-2xl font-light mb-6 lowercase tracking-wide text-gray-800">submit your rushmore</h2>
-            {!session && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 mb-6 animate-pulse-slow">
-                <p className="text-yellow-800 text-sm lowercase flex items-center gap-2">
-                  <span className="text-lg">💡</span>
-                  <strong>tip:</strong> sign in to save your rushmores and vote on others!
-                </p>
-              </div>
-            )}
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift" style={{animationDelay: '0.2s'}}>
+            <h2 className="text-2xl font-light mb-6 lowercase tracking-wide text-gray-800">what's on your "{question?.prompt}" mt. rushmore?</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               {!session && (
                 <div>
@@ -286,25 +350,25 @@ export default function PlayPage() {
 
         {/* User's Rushmore */}
         {userRushmore && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-8 mb-8 animate-fade-in hover-lift" style={{animationDelay: '0.4s'}}>
-            <h2 className="text-2xl font-light mb-6 text-blue-800 lowercase tracking-wide flex items-center gap-2">
-              <span className="text-2xl">👑</span>
-              your rushmore
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-fade-in hover-lift" style={{animationDelay: '0.4s'}}>
+            <h2 className="text-2xl font-light mb-6 text-gray-800 lowercase tracking-wide flex items-center gap-2">
+              <span className="text-2xl">◆</span>
+              my "{question?.prompt}" mt. rushmore
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200">1. {userRushmore.item1}</div>
-              <div className="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200">2. {userRushmore.item2}</div>
-              <div className="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200">3. {userRushmore.item3}</div>
-              <div className="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200">4. {userRushmore.item4}</div>
+              <div className="bg-gray-50 p-4 rounded-xl border">1. {userRushmore.item1}</div>
+              <div className="bg-gray-50 p-4 rounded-xl border">2. {userRushmore.item2}</div>
+              <div className="bg-gray-50 p-4 rounded-xl border">3. {userRushmore.item3}</div>
+              <div className="bg-gray-50 p-4 rounded-xl border">4. {userRushmore.item4}</div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <button
                 onClick={() => shareRushmore(userRushmore)}
                 className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 lowercase shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                📤 share
+                share
               </button>
-              <span className="text-sm text-gray-600 lowercase bg-white px-4 py-2 rounded-lg shadow-sm">
+              <span className="text-sm text-gray-600 lowercase bg-gray-50 px-4 py-2 rounded-lg">
                 votes: {userRushmore.voteCount} (↑{userRushmore.upvotes} ↓{userRushmore.downvotes})
               </span>
             </div>
@@ -312,20 +376,22 @@ export default function PlayPage() {
         )}
 
         {/* All Rushmores */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
+        <div className="bg-white rounded-2xl shadow-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
           <h2 className="text-2xl font-light mb-8 lowercase tracking-wide text-gray-800 flex items-center gap-2">
-            <span className="text-2xl">🌟</span>
-            everyone's rushmores
+            <span className="text-2xl">●</span>
+            today's rushmores
           </h2>
           {rushmores.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎯</div>
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-gray-400 text-2xl">●</span>
+              </div>
               <p className="text-gray-500 lowercase text-lg">no rushmores submitted yet. be the first!</p>
             </div>
           ) : (
             <div className="space-y-6">
               {rushmores.map((rushmore, index) => (
-                <div key={rushmore.id} className="border border-gray-200 rounded-xl p-6 hover-lift bg-white/50 backdrop-blur-sm transition-all duration-200">
+                <div key={rushmore.id} className="border border-gray-200 rounded-xl p-6 hover-lift bg-gray-50 transition-all duration-200">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-light text-gray-800 lowercase text-lg">{rushmore.user.name}</h3>
                     <div className="flex items-center gap-3">
@@ -347,10 +413,10 @@ export default function PlayPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-gray-50 p-3 rounded-lg border shadow-sm">1. {rushmore.item1}</div>
-                    <div className="bg-gray-50 p-3 rounded-lg border shadow-sm">2. {rushmore.item2}</div>
-                    <div className="bg-gray-50 p-3 rounded-lg border shadow-sm">3. {rushmore.item3}</div>
-                    <div className="bg-gray-50 p-3 rounded-lg border shadow-sm">4. {rushmore.item4}</div>
+                    <div className="bg-white p-3 rounded-lg border shadow-sm">1. {rushmore.item1}</div>
+                    <div className="bg-white p-3 rounded-lg border shadow-sm">2. {rushmore.item2}</div>
+                    <div className="bg-white p-3 rounded-lg border shadow-sm">3. {rushmore.item3}</div>
+                    <div className="bg-white p-3 rounded-lg border shadow-sm">4. {rushmore.item4}</div>
                   </div>
                 </div>
               ))}

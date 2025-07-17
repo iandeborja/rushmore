@@ -1,34 +1,42 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, useState } from "react";
 
-// Temporarily disabled NextAuth to avoid Vercel deployment issues
-// Will re-enable after successful deployment
+const MockSessionContext = createContext(null);
 
-// Mock session context
-interface MockSession {
-  data: {
-    user: {
-      name: string;
-      email: string;
-    } | null;
-  } | null;
-  status: "unauthenticated";
-}
+export function MockSessionProvider({ children }) {
+  const [loggedIn, setLoggedIn] = useState(true);
+  const mockSession = loggedIn
+    ? {
+        user: {
+          name: "Test User",
+          email: "test@example.com",
+        },
+      }
+    : null;
 
-const MockSessionContext = createContext<MockSession>({
-  data: null,
-  status: "unauthenticated",
-});
-
-export const useSession = () => {
-  return useContext(MockSessionContext);
-};
-
-export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <MockSessionContext.Provider value={{ data: null, status: "unauthenticated" }}>
+    <MockSessionContext.Provider value={{ data: mockSession, status: loggedIn ? "authenticated" : "unauthenticated", setLoggedIn }}>
+      <div style={{ position: "fixed", top: 8, right: 8, zIndex: 9999 }}>
+        <button
+          onClick={() => setLoggedIn((v) => !v)}
+          style={{
+            background: "#eee",
+            border: "1px solid #ccc",
+            borderRadius: 8,
+            padding: "6px 12px",
+            fontSize: 12,
+            cursor: "pointer",
+          }}
+        >
+          {loggedIn ? "Switch to Logged Out" : "Switch to Logged In"}
+        </button>
+      </div>
       {children}
     </MockSessionContext.Provider>
   );
+}
+
+export function useSession() {
+  return useContext(MockSessionContext);
 } 
