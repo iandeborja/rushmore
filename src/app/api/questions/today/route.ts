@@ -3,6 +3,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const fallbackQuestions = [
+  "best fast food menu items",
+  "Things that make you feel old",
+  "Best comfort foods",
+  "Things that are overrated",
+  "Best pizza toppings"
+];
+
 export async function GET() {
   try {
     const today = new Date();
@@ -19,10 +27,18 @@ export async function GET() {
     });
 
     if (!question) {
-      return NextResponse.json(
-        { error: "No question found for today" },
-        { status: 404 }
-      );
+      // Create a fallback question if none exists
+      console.log("No question found for today, creating fallback question");
+      const randomQuestion = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+      
+      const newQuestion = await prisma.question.create({
+        data: {
+          prompt: randomQuestion,
+          date: today,
+        },
+      });
+
+      return NextResponse.json(newQuestion);
     }
 
     return NextResponse.json(question);

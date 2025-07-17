@@ -10,14 +10,20 @@ This guide will help you deploy Rushmore to production using Vercel and Supabase
 
 ## Step 1: Prepare Your Code
 
-1. **Push to GitHub**
+1. **Question Management**
+   - The system automatically ensures there's always a question for today
+   - During build: `postbuild` script runs `ensureTodayQuestion.ts`
+   - At runtime: API automatically creates fallback questions if none exist
+   - Manual management: `npm run ensure-question` or `npm run set-question "your question"`
+
+2. **Push to GitHub**
    ```bash
    git add .
    git commit -m "Prepare for deployment"
    git push origin main
    ```
 
-2. **Update Environment Variables**
+3. **Update Environment Variables**
    - Your local `.env` file should work for development
    - Production variables will be set in Vercel
 

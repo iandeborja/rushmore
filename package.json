@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "next start",
+    "postbuild": "tsx scripts/ensureTodayQuestion.ts",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
@@ -13,7 +14,8 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx scripts/seedAchievements.ts",
     "set-question": "tsx scripts/setTodayQuestion.ts",
-    "daily-reset": "tsx scripts/dailyReset.ts"
+    "daily-reset": "tsx scripts/dailyReset.ts",
+    "ensure-question": "tsx scripts/ensureTodayQuestion.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

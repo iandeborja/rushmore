@@ -67,7 +67,16 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
 
       // Fetch today's question from the API
       const questionRes = await fetch("/api/questions/today");
+      if (!questionRes.ok) {
+        throw new Error(`Failed to fetch question: ${questionRes.status}`);
+      }
       const questionData = await questionRes.json();
+      
+      // Check if the response contains an error
+      if (questionData.error) {
+        throw new Error(questionData.error);
+      }
+      
       setQuestion(questionData);
     } catch (error) {
       console.error("Error fetching rushmore:", error);
