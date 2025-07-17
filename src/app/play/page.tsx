@@ -526,16 +526,16 @@ export default function PlayPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {!session && (
                 <div>
-                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
-                    your name
-                  </label>
+                                  <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
+                  your username
+                </label>
                   <input
                     type="text"
                     value={formData.anonymousName}
                     onChange={(e) => setFormData({ ...formData, anonymousName: e.target.value })}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent lowercase transition-all duration-200 hover:border-gray-400"
-                    placeholder="enter your name"
+                                          placeholder="enter your username"
                   />
                 </div>
               )}
