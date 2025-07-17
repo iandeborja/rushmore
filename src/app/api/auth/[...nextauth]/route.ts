@@ -37,10 +37,18 @@ const handler = NextAuth({
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // After successful sign-in, check if user needs to set up username
-      if (url.startsWith(baseUrl)) {
+      // Handle different redirect scenarios
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        // Default redirect after sign-in
         return `${baseUrl}/setup-username`;
       }
+      
+      // If coming from sign-in page, go to setup-username
+      if (url.includes('/auth/signin')) {
+        return `${baseUrl}/setup-username`;
+      }
+      
+      // For all other cases, use the provided URL
       return url;
     }
   }
