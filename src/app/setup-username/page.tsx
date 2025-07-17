@@ -23,6 +23,7 @@ export default function SetupUsername() {
     // If user already has a username, redirect to play
     if (session.user?.username) {
       router.push("/play");
+      return;
     }
   }, [session, status, router]);
 

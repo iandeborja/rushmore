@@ -54,7 +54,8 @@ export default function PlayPage() {
   // Redirect to username setup if user is signed in but doesn't have a username
   useEffect(() => {
     if (status === "loading") return;
-    if (session?.user && !session.user.username) {
+    // Only redirect if user is authenticated AND doesn't have a username
+    if (session?.user && session.user.email && !session.user.username) {
       router.push("/setup-username");
     }
   }, [session, status, router]);

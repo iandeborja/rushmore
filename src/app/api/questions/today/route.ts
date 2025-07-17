@@ -27,7 +27,7 @@ export async function GET() {
     // For now, just return a hardcoded question to get the app working
     const question = {
       id: "temp-id",
-      prompt: "best pizza toppings",
+      prompt: "best fast food menu items",
       date: new Date(),
       createdAt: new Date()
     };

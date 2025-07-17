@@ -8,14 +8,10 @@ export default function SignIn() {
   const router = useRouter();
 
   const handleGoogleSignIn = async () => {
-    const result = await signIn("google", {
-      redirect: false,
+    // Use redirect: true to let NextAuth handle the redirect
+    await signIn("google", {
+      callbackUrl: "/setup-username",
     });
-
-    if (result?.ok) {
-      // Let the redirect logic in the callback handle where to send the user
-      window.location.href = "/play";
-    }
   };
 
   return (

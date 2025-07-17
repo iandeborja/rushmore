@@ -35,6 +35,13 @@ const handler = NextAuth({
         session.user.username = dbUser?.username || null;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // After successful sign-in, check if user needs to set up username
+      if (url.startsWith(baseUrl)) {
+        return `${baseUrl}/setup-username`;
+      }
+      return url;
     }
   }
 });

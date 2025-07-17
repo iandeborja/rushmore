@@ -60,9 +60,10 @@ NEXT_PUBLIC_USE_MOCK_SESSION=false
 
 ## User Experience Flow
 
-1. **New User**: Google Sign-In → Username Setup → Play
-2. **Existing User**: Google Sign-In → Play (if username exists)
-3. **Username Display**: Shows @username instead of "John Smith"
+1. **Anonymous User**: Can play immediately without signing in
+2. **New User**: Google Sign-In → Username Setup → Play (with voting/saving)
+3. **Existing User**: Google Sign-In → Play (if username exists)
+4. **Username Display**: Shows @username instead of "John Smith"
 
 ## Benefits
 
