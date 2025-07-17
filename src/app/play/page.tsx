@@ -537,7 +537,7 @@ export default function PlayPage() {
               {!session && (
                 <div>
                                   <label className="block text-sm font-light text-gray-700 mb-2 lowercase">
-                  your username
+                  your guest name
                 </label>
                   <input
                     type="text"
@@ -545,7 +545,7 @@ export default function PlayPage() {
                     onChange={(e) => setFormData({ ...formData, anonymousName: e.target.value })}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent lowercase transition-all duration-200 hover:border-gray-400"
-                                          placeholder="enter your username"
+                                          placeholder="enter your guest name"
                   />
                 </div>
               )}
