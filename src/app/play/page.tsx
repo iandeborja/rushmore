@@ -1,5 +1,8 @@
 "use client";
 
+// 🎯 TODAY'S QUESTION: Change this in the fetchData function around line 118
+// Current question: "best pizza toppings"
+
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "@/components/Providers";
 import { useToast } from "@/components/Toast";
@@ -113,9 +116,13 @@ export default function PlayPage() {
 
   const fetchData = async () => {
     try {
-      // Fetch today's question
-      const questionRes = await fetch("/api/questions/today");
-      const questionData = await questionRes.json();
+      // Set today's question (manually updated)
+      const questionData = {
+        id: "today",
+        prompt: "best pizza toppings",
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
       setQuestion(questionData);
 
       // Fetch all Rushmores for today

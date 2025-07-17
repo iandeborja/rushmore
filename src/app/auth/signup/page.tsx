@@ -63,7 +63,7 @@ export default function SignUp() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-light text-gray-700 mb-1 lowercase">
-              username
+              name
             </label>
             <input
               type="text"
