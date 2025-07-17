@@ -1,13 +1,11 @@
 // Comprehensive list of words to filter out
 const BANNED_WORDS = [
   // Profanity - Common
-  'fuck', 'shit', 'bitch', 'ass', 'damn', 'hell', 'piss', 'cock', 'dick', 'pussy', 'cunt', 'twat', 'whore', 'slut',
+  'fuck', 'bitch', 'piss', 'cock', 'dick', 'pussy', 'cunt', 'twat', 'whore', 'slut',
   
   // Profanity - Variations and misspellings
   'f*ck', 'f**k', 'f***', 'f****', 'f*****', 'fck', 'fuk', 'fuq', 'fux', 'fuxk',
-  's**t', 's***', 'sh*t', 'sh*t', 'sh1t', 'sh!t', 'shyt', 'sht',
   'b*tch', 'b**ch', 'b***h', 'b!tch', 'b1tch', 'bytch', 'b!tch',
-  'a**', 'a***', 'a**hole', 'a**h0le', 'a**h0l3', 'a**h0le', 'a**hole',
   'd*ck', 'd**k', 'd***', 'd!ck', 'd1ck', 'd!ck', 'dik', 'd!k',
   'c*ck', 'c**k', 'c***', 'c!ck', 'c1ck', 'c0ck', 'cok',
   'p*ssy', 'p**sy', 'p***y', 'p!ssy', 'p1ssy', 'p!ssy', 'pussy', 'puss',
@@ -77,15 +75,9 @@ const BANNED_WORDS = [
   'twat', 'tw@t', 'tw!t', 'tw@t', 'tw!t',
   'pussy', 'p!ssy', 'p1ssy', 'p!ssy', 'p1ssy',
   'skank', 'sk@nk', 'sk!nk', 'sk@nk', 'sk!nk',
-  'ho', 'h0', 'h!', 'h0', 'h!',
-  'hoe', 'h0e', 'h!e', 'h0e', 'h!e',
   'tramp', 'tr@mp', 'tr!mp', 'tr@mp', 'tr!mp',
   'floozy', 'fl00zy', 'fl00zy', 'fl00zy', 'fl00zy',
   'hussy', 'hussy', 'hussy', 'hussy', 'hussy',
-  'tart', 't@rt', 't!rt', 't@rt', 't!rt',
-  'broad', 'br0@d', 'br0@d', 'br0@d', 'br0@d',
-  'dame', 'd@me', 'd!me', 'd@me', 'd!me',
-  'wench', 'wench', 'wench', 'wench', 'wench',
   
   // Ableist slurs
   'retard', 'ret@rd', 'ret@rd', 'ret@rd', 'ret@rd',
@@ -114,44 +106,10 @@ const BANNED_WORDS = [
   'jewfaggot', 'jewf@gg0t', 'jewf@gg0t', 'jewf@gg0t', 'jewf@gg0t',
   
   // Violence and threats
-  'kill', 'k!ll', 'k1ll', 'k!ll', 'k1ll',
-  'murder', 'murd3r', 'murd3r', 'murd3r', 'murd3r',
-  'suicide', 'su!c!de', 'su!c!de', 'su!c!de', 'su!c!de',
-  'terrorist', 'terr0r!st', 'terr0r!st', 'terr0r!st', 'terr0r!st',
-  'terrorism', 'terr0r!sm', 'terr0r!sm', 'terr0r!sm', 'terr0r!sm',
-  'gun', 'g0n', 'g!n', 'g0n', 'g!n',
-  'weapon', 'we@p0n', 'we@p0n', 'we@p0n', 'we@p0n',
-  'knife', 'kn!fe', 'kn1fe', 'kn!fe', 'kn1fe',
-  'stab', 'st@b', 'st!b', 'st@b', 'st!b',
-  'punch', 'punch', 'punch', 'punch', 'punch',
-  'fight', 'f!ght', 'f1ght', 'f!ght', 'f1ght',
-  'attack', 'att@ck', 'att@ck', 'att@ck', 'att@ck',
-  'assault', 'ass@ult', 'ass@ult', 'ass@ult', 'ass@ult',
   'rape', 'r@pe', 'r!pe', 'r@pe', 'r!pe',
   'molest', 'm0lest', 'm0lest', 'm0lest', 'm0lest',
   'abuse', '@buse', '@buse', '@buse', '@buse',
-  'torture', 't0rture', 't0rture', 't0rture', 't0rture',
-  'execute', 'execute', 'execute', 'execute', 'execute',
-  'hang', 'h@ng', 'h!ng', 'h@ng', 'h!ng',
-  'bomb', 'b0mb', 'b!mb', 'b0mb', 'b!mb',
-  'explode', 'expl0de', 'expl0de', 'expl0de', 'expl0de',
-  'blowup', 'bl0wup', 'bl0wup', 'bl0wup', 'bl0wup',
-  'blow up', 'bl0w up', 'bl0w up', 'bl0w up', 'bl0w up',
-  
-  
-  // Additional offensive terms
-  'fatass', 'f@t@ss', 'f@t@ss', 'f@t@ss', 'f@t@ss',
-  'skinnyass', 'sk!nny@ss', 'sk!nny@ss', 'sk!nny@ss', 'sk!nny@ss',
-  'uglyass', 'ugly@ss', 'ugly@ss', 'ugly@ss', 'ugly@ss',
-  'stupidass', 'stup!d@ss', 'stup!d@ss', 'stup!d@ss', 'stup!d@ss',
-  'dumbass', 'dumb@ss', 'dumb@ss', 'dumb@ss', 'dumb@ss',
-  'smartass', 'sm@rt@ss', 'sm@rt@ss', 'sm@rt@ss', 'sm@rt@ss',
-  'wiseass', 'w!s3@ss', 'w!s3@ss', 'w!s3@ss', 'w!s3@ss',
-  'loudmouth', 'l0udm0uth', 'l0udm0uth', 'l0udm0uth', 'l0udm0uth',
-  'bigmouth', 'b!gm0uth', 'b!gm0uth', 'b!gm0uth', 'b!gm0uth',
-  'fatass', 'f@t@ss', 'f@t@ss', 'f@t@ss', 'f@t@ss',
-  'skinnyass', 'sk!nny@ss', 'sk!nny@ss', 'sk!nny@ss', 'sk!nny@ss',
-  'uglyass', 'ugly@ss', 'ugly@ss', 'ugly@ss', 'ugly@ss',
+
 ];
 
 // Function to check if text contains banned words
