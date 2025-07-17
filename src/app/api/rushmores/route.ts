@@ -106,18 +106,19 @@ export async function POST(request: NextRequest) {
           }
 
           // Check if user already submitted for today
-          console.log("API Debug - Checking for existing rushmore for user:", user.id, "and question:", question.id);
+          // @ts-ignore
+          console.log("API Debug - Checking for existing rushmore for user:", (user as any).id, "and question:", question.id);
           
           // Debug: Check all rushmores for this user
           const allUserRushmores = await tx.rushmore.findMany({
-            where: { userId: user.id },
+            where: { userId: (user as any).id },
           });
           console.log("API Debug - All rushmores for user:", allUserRushmores.length, allUserRushmores.map((r: any) => r.id));
           
           const existingRushmore = await tx.rushmore.findFirst({
             where: {
-              userId: user.id,
-              questionId: question.id,
+              userId: (user as any).id,
+              questionId: (question as any).id,
             },
           });
           console.log("API Debug - Existing rushmore check result:", existingRushmore ? `Found rushmore ${existingRushmore.id}` : "No existing rushmore");
@@ -154,16 +155,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Update user streak
-        console.log("API Debug - Updating user streak for:", userId);
+        console.log("API Debug - Updating user streak for:", userId, "question:", (question as any).id);
         await updateUserStreak(userId, tx);
         console.log("API Debug - User streak updated successfully");
 
         // Create Rushmore
-        console.log("API Debug - Creating rushmore for user:", userId, "question:", question.id);
+        console.log("API Debug - Creating rushmore for user:", userId, "question:", (question as any).id);
         const rushmore = await tx.rushmore.create({
           data: {
             userId,
-            questionId: question.id,
+            questionId: (question as any).id,
             item1,
             item2,
             item3,
@@ -262,7 +263,7 @@ export async function GET() {
       rushmores = await Promise.race([
         prisma.rushmore.findMany({
           where: {
-            questionId: question.id,
+            questionId: (question as any).id,
           },
           include: {
             user: {

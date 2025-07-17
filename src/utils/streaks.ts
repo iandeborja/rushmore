@@ -101,7 +101,8 @@ async function checkAndAwardAchievements(userId: string, stats: {
     include: { achievement: true }
   });
 
-  const unlockedAchievementIds = new Set(userAchievements.map(ua => ua.achievementId));
+  // Fix implicit any error
+  const unlockedAchievementIds = new Set(userAchievements.map((ua: any) => ua.achievementId));
 
   for (const achievement of allAchievements) {
     if (unlockedAchievementIds.has(achievement.id)) {
