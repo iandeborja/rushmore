@@ -9,7 +9,7 @@ export function MockSessionProvider({ children }) {
   const mockSession = loggedIn
     ? {
         user: {
-          name: "Test User",
+          name: "mt. testmore",
           email: "test@example.com",
         },
       }

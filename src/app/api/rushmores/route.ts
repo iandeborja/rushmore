@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
+import { validateRushmoreSubmission } from "@/utils/automod";
+import { updateUserStreak } from "@/utils/streaks";
 
 const prisma = new PrismaClient();
 
@@ -9,10 +11,30 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession();
     const { item1, item2, item3, item4, anonymousName } = await request.json();
+    
+    // Get user email from query params for mock sessions
+    const url = new URL(request.url);
+    const userEmail = url.searchParams.get('email');
+
+    console.log("API Debug - Session:", session);
+    console.log("API Debug - User email from query:", userEmail);
+    console.log("API Debug - Request body:", { item1, item2, item3, item4, anonymousName });
 
     if (!item1 || !item2 || !item3 || !item4) {
       return NextResponse.json(
         { error: "All 4 items are required" },
+        { status: 400 }
+      );
+    }
+
+    // Automod validation
+    const validation = validateRushmoreSubmission([item1, item2, item3, item4]);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { 
+          error: "Your rushmore contains inappropriate language. Please revise your answers.",
+          bannedWords: validation.bannedWordsFound
+        },
         { status: 400 }
       );
     }
@@ -40,14 +62,24 @@ export async function POST(request: NextRequest) {
     let user;
     let userId;
 
-    if (session?.user?.email) {
+    if (session?.user?.email || userEmail) {
+      const email = session?.user?.email || userEmail!;
+      console.log("API Debug - Processing logged in user:", email);
       // Logged in user
       user = await prisma.user.findUnique({
-        where: { email: session.user.email },
+        where: { email },
       });
 
+      // If user doesn't exist, create one with name from session or 'idb'
       if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+        let userName = session?.user?.name || "mt. testmore";
+        console.log("API Debug - Creating new user with name:", userName);
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: userName,
+          },
+        });
       }
 
       // Check if user already submitted for today
@@ -67,8 +99,10 @@ export async function POST(request: NextRequest) {
 
       userId = user.id;
     } else {
+      console.log("API Debug - Processing anonymous user");
       // Anonymous user
       if (!anonymousName || anonymousName.trim().length < 2) {
+        console.log("API Debug - Anonymous name validation failed:", anonymousName);
         return NextResponse.json(
           { error: "Please provide a name (at least 2 characters)" },
           { status: 400 }
@@ -107,7 +141,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(rushmore, { status: 201 });
+    // Update user streak and check for achievements
+    let streakUpdate = null;
+    let newAchievements: string[] = [];
+    
+    try {
+      streakUpdate = await updateUserStreak(userId);
+      newAchievements = streakUpdate.newAchievements;
+    } catch (error) {
+      console.error("Error updating streak:", error);
+    }
+
+    return NextResponse.json({
+      ...rushmore,
+      streakUpdate,
+      newAchievements,
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating Rushmore:", error);
     return NextResponse.json(

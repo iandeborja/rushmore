@@ -63,21 +63,21 @@ export default function Home() {
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-blue-600 text-xl font-light">●</span>
             </div>
-            <h3 className="font-medium lowercase text-gray-800 mb-1">daily questions</h3>
-            <p className="text-sm text-gray-600 lowercase">fresh challenges every day</p>
+            <h3 className="font-medium lowercase text-gray-800 mb-1">daily</h3>
+            <p className="text-sm text-gray-600 lowercase">a new prompt every day</p>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-green-600 text-xl font-light">▲</span>
             </div>
-            <h3 className="font-medium lowercase text-gray-800 mb-1">vote & compete</h3>
+            <h3 className="font-medium lowercase text-gray-800 mb-1">vote</h3>
             <p className="text-sm text-gray-600 lowercase">see how you rank</p>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-purple-600 text-xl font-light">◆</span>
             </div>
-            <h3 className="font-medium lowercase text-gray-800 mb-1">save & share</h3>
+            <h3 className="font-medium lowercase text-gray-800 mb-1">share</h3>
             <p className="text-sm text-gray-600 lowercase">keep your favorites</p>
           </div>
         </div>

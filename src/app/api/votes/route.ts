@@ -32,12 +32,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: userEmail },
     });
 
+    // If user doesn't exist, create one with name from session or 'idb'
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      // Try to get name from session or query param
+      let userName = session?.user?.name;
+      if (!userName) {
+        const { searchParams } = new URL(request.url);
+        userName = searchParams.get("name") || "idb";
+      }
+      user = await prisma.user.create({
+        data: {
+          email: userEmail,
+          name: userName,
+        },
+      });
     }
 
     // Check if user already voted on this Rushmore

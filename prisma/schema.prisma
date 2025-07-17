@@ -1,13 +1,35 @@
 // Prisma schema for Rushmore
-// Models: User, Question, Rushmore, Vote, Friend
+// Models: User, Question, Rushmore, Vote, Friend, Comment, Report
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum ReportReason {
+  INAPPROPRIATE
+  SPAM
+  HARASSMENT
+  VIOLENCE
+  COPYRIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
 }
 
 model User {
@@ -16,10 +38,23 @@ model User {
   name      String?
   image     String?
   hashedPassword String?
+  role      UserRole @default(USER)
+  isBanned  Boolean  @default(false)
+  banReason String?
+  // Streak tracking
+  currentStreak Int @default(0)
+  longestStreak Int @default(0)
+  lastPlayedDate DateTime?
+  totalDaysPlayed Int @default(0)
+  // Achievements
+  achievements UserAchievement[]
   rushmores Rushmore[]
   votes     Vote[]
+  comments  Comment[]
   friends   Friend[] @relation("UserFriends")
   friendOf  Friend[] @relation("FriendOf")
+  reportsSubmitted Report[] @relation("Reporter")
+  reportsReviewed Report[] @relation("Reviewer")
   createdAt DateTime @default(now())
 }
 
@@ -41,7 +76,11 @@ model Rushmore {
   item2      String
   item3      String
   item4      String
+  isHidden   Boolean  @default(false)
+  hideReason String?
   votes      Vote[]
+  comments   Comment[]
+  reports    Report[]
   createdAt  DateTime @default(now())
 }
 
@@ -57,6 +96,19 @@ model Vote {
   @@unique([userId, rushmoreId])
 }
 
+model Comment {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  rushmore   Rushmore @relation(fields: [rushmoreId], references: [id])
+  rushmoreId String
+  content    String
+  isHidden   Boolean  @default(false)
+  hideReason String?
+  reports    Report[]
+  createdAt  DateTime @default(now())
+}
+
 model Friend {
   id        String  @id @default(cuid())
   user      User    @relation("UserFriends", fields: [userId], references: [id])
@@ -66,4 +118,45 @@ model Friend {
   createdAt DateTime @default(now())
 
   @@unique([userId, friendId])
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id])
+  reporterId  String
+  reviewer    User?        @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewerId  String?
+  rushmore    Rushmore?    @relation(fields: [rushmoreId], references: [id])
+  rushmoreId  String?
+  comment     Comment?     @relation(fields: [commentId], references: [id])
+  commentId   String?
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(PENDING)
+  resolution  String?
+  createdAt   DateTime     @default(now())
+  reviewedAt  DateTime?
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String   // Emoji or icon identifier
+  category    String   // "streak", "social", "milestone", etc.
+  requirement Int      // Number required to unlock
+  users       UserAchievement[]
+  createdAt   DateTime @default(now())
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  progress      Int         @default(0) // Current progress toward next tier
+
+  @@unique([userId, achievementId])
 } 

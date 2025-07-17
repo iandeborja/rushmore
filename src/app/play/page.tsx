@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "@/components/Providers";
+import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -27,14 +28,27 @@ interface Rushmore {
   createdAt: string;
 }
 
+interface Comment {
+  id: string;
+  content: string;
+  rushmoreId: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+}
+
 export default function PlayPage() {
   const { data: session, status } = useSession();
+  const { showToast } = useToast();
   const router = useRouter();
   const [question, setQuestion] = useState<Question | null>(null);
   const [rushmores, setRushmores] = useState<Rushmore[]>([]);
   const [userRushmore, setUserRushmore] = useState<Rushmore | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [votingStates, setVotingStates] = useState<{ [key: string]: boolean }>({});
   const [formData, setFormData] = useState({
     item1: "",
     item2: "",
@@ -42,7 +56,22 @@ export default function PlayPage() {
     item4: "",
     anonymousName: "",
   });
-  const [userStats, setUserStats] = useState(null);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [showAchievementToast, setShowAchievementToast] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<string[]>([]);
+  const [friends, setFriends] = useState<{ email: string }[]>([]);
+  const [sortBy, setSortBy] = useState<'top' | 'bottom' | 'new'>('top');
+  const [following, setFollowing] = useState<{ [key: string]: boolean }>({});
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ id: string; type: string } | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+
+  // Check if user has voted today (submitted their rushmore)
+  const hasVotedToday = !!userRushmore;
 
   useEffect(() => {
     fetchData();
@@ -51,10 +80,34 @@ export default function PlayPage() {
         .then(res => res.json())
         .then(setUserStats)
         .catch(() => setUserStats(null));
+      
+      // Fetch friends
+      fetch(`/api/friends?email=${encodeURIComponent(session.user.email)}`)
+        .then(res => res.json())
+        .then(setFriends)
+        .catch(() => setFriends([]));
     } else {
       setUserStats(null);
+      setFriends([]);
     }
   }, [session?.user?.email]);
+
+  // Sort rushmores based on current sort option
+  const sortedRushmores = useMemo(() => {
+    if (!rushmores.length) return [];
+    
+    const sorted = [...rushmores];
+    switch (sortBy) {
+      case 'top':
+        return sorted.sort((a, b) => b.voteCount - a.voteCount);
+      case 'bottom':
+        return sorted.sort((a, b) => a.voteCount - b.voteCount);
+      case 'new':
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      default:
+        return sorted;
+    }
+  }, [rushmores, sortBy]);
 
   const fetchData = async () => {
     try {
@@ -77,6 +130,7 @@ export default function PlayPage() {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      showToast("error", "Failed to load today's rushmore");
     } finally {
       setLoading(false);
     }
@@ -87,10 +141,24 @@ export default function PlayPage() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("/api/rushmores", {
+      // Prepare submission data - only include anonymousName if user is not logged in
+      const submissionData = {
+        item1: formData.item1,
+        item2: formData.item2,
+        item3: formData.item3,
+        item4: formData.item4,
+        ...(session ? {} : { anonymousName: formData.anonymousName })
+      };
+
+      // Add user email to URL for mock sessions
+      const url = session?.user?.email 
+        ? `/api/rushmores?email=${encodeURIComponent(session.user.email)}`
+        : "/api/rushmores";
+        
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       if (response.ok) {
@@ -98,13 +166,32 @@ export default function PlayPage() {
         setUserRushmore(newRushmore);
         setRushmores([newRushmore, ...rushmores]);
         setFormData({ item1: "", item2: "", item3: "", item4: "", anonymousName: "" });
+        showToast("success", "Rushmore submitted successfully!");
+        
+        // Handle new achievements
+        if (newRushmore.newAchievements && newRushmore.newAchievements.length > 0) {
+          setNewAchievements(newRushmore.newAchievements);
+          setShowAchievementToast(true);
+        }
+        
+        // Refresh user stats
+        if (session?.user?.email) {
+          fetch(`/api/user-stats?email=${encodeURIComponent(session.user.email)}`)
+            .then(res => res.json())
+            .then(setUserStats)
+            .catch(() => setUserStats(null));
+        }
       } else {
         const error = await response.json();
-        alert(error.error);
+        if (error.bannedWords) {
+          showToast("error", `${error.error} Banned words found: ${error.bannedWords.join(', ')}`);
+        } else {
+          showToast("error", error.error || "Failed to submit rushmore");
+        }
       }
     } catch (error) {
       console.error("Error submitting Rushmore:", error);
-      alert("Failed to submit Rushmore");
+      showToast("error", "Failed to submit rushmore");
     } finally {
       setSubmitting(false);
     }
@@ -112,9 +199,12 @@ export default function PlayPage() {
 
   const handleVote = async (rushmoreId: string, value: number) => {
     if (!session) {
-      alert("Please sign in to vote!");
+      showToast("error", "Please sign in to vote!");
       return;
     }
+
+    // Set loading state for this specific vote
+    setVotingStates(prev => ({ ...prev, [rushmoreId]: true }));
 
     try {
       const email = session.user?.email;
@@ -126,47 +216,192 @@ export default function PlayPage() {
 
       if (response.ok) {
         // Refresh data to get updated vote counts
-        fetchData();
+        await fetchData();
+        showToast("success", value === 1 ? "Upvoted!" : "Downvoted!");
       } else {
-        const error = await response.json();
-        console.error("Vote failed:", error);
+        let errorMessage = "Vote failed";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || "Vote failed";
+        } catch (e) {
+          errorMessage = `Vote failed with status ${response.status}`;
+        }
+        showToast("error", errorMessage);
       }
     } catch (error) {
       console.error("Error voting:", error);
+      showToast("error", "Failed to vote");
+    } finally {
+      setVotingStates(prev => ({ ...prev, [rushmoreId]: false }));
     }
   };
 
   const shareRushmore = (rushmore: Rushmore) => {
-    const prompt = (question?.prompt ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-    const shareText = `my ${prompt} mt. rushmore:\n1. ${rushmore.item1.toLowerCase()}\n2. ${rushmore.item2.toLowerCase()}\n3. ${rushmore.item3.toLowerCase()}\n4. ${rushmore.item4.toLowerCase()}\n\nplay at rushmore.vercel.app`;
+    const url = `${window.location.origin}/rushmore/${rushmore.id}`;
+    const title = `${rushmore.user.name}'s "${question?.prompt}" mt. rushmore`;
+    const text = `check out this ${question?.prompt} mt. rushmore`;
 
     // Try to use native sharing if available
     if (navigator.share) {
       navigator.share({
-        text: shareText
+        title,
+        text,
+        url
       }).catch(() => {
         // Fallback to clipboard
-        navigator.clipboard.writeText(shareText);
-        showShareSuccess();
+        navigator.clipboard.writeText(url);
+        showToast("success", "Link copied to clipboard!");
       });
     } else {
       // Fallback to clipboard
-      navigator.clipboard.writeText(shareText);
-      showShareSuccess();
+      navigator.clipboard.writeText(url);
+      showToast("success", "Link copied to clipboard!");
     }
   };
 
-  const showShareSuccess = () => {
-    // Create a temporary success message
-    const successDiv = document.createElement('div');
-    successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-    successDiv.textContent = 'rushmore copied to clipboard!';
-    document.body.appendChild(successDiv);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      successDiv.remove();
-    }, 3000);
+  const handleFollow = async (userEmail: string) => {
+    if (!session?.user?.email) {
+      showToast("error", "Please sign in to follow users!");
+      return;
+    }
+
+    try {
+      // Add user email to URL for mock sessions
+      const url = `/api/friends?email=${encodeURIComponent(session.user.email)}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          friendEmail: userEmail,
+        }),
+      });
+
+      if (response.ok) {
+        setFollowing(prev => ({ ...prev, [userEmail]: true }));
+        showToast("success", "User followed successfully!");
+      } else {
+        const error = await response.json();
+        showToast("error", error.error || "Failed to follow user");
+      }
+    } catch (error) {
+      console.error("Error following user:", error);
+      showToast("error", "Failed to follow user");
+    }
+  };
+
+  const handleUnfollow = async (userEmail: string) => {
+    if (!session?.user?.email) {
+      showToast("error", "Please sign in to unfollow users!");
+      return;
+    }
+
+    try {
+      // Add user email and friend email to URL for mock sessions
+      const url = `/api/friends?email=${encodeURIComponent(session.user.email)}&friendEmail=${encodeURIComponent(userEmail)}`;
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        setFollowing(prev => ({ ...prev, [userEmail]: false }));
+        showToast("success", "User unfollowed successfully!");
+      } else {
+        const error = await response.json();
+        showToast("error", error.error || "Failed to unfollow user");
+      }
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      showToast("error", "Failed to unfollow user");
+    }
+  };
+
+  const handleCommentSubmit = async (rushmoreId: string) => {
+    if (!session?.user?.email) {
+      showToast("error", "Please sign in to comment!");
+      return;
+    }
+
+    const commentText = commentInputs[rushmoreId]?.trim();
+    if (!commentText) {
+      showToast("error", "Please enter a comment");
+      return;
+    }
+
+    try {
+      // Add user email to URL for mock sessions
+      const url = `/api/comments?email=${encodeURIComponent(session.user.email)}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rushmoreId,
+          content: commentText,
+        }),
+      });
+
+      if (response.ok) {
+        const newComment = await response.json();
+        setComments(prev => [...prev, newComment]);
+        setCommentInputs(prev => ({ ...prev, [rushmoreId]: "" }));
+        showToast("success", "Comment posted successfully!");
+      } else {
+        const error = await response.json();
+        if (error.bannedWords) {
+          showToast("error", `${error.error} Banned words found: ${error.bannedWords.join(', ')}`);
+        } else {
+          showToast("error", error.error || "Failed to post comment");
+        }
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      showToast("error", "Failed to post comment");
+    }
+  };
+
+  const showReportDialog = (id: string, type: string) => {
+    setReportTarget({ id, type });
+    setShowReportModal(true);
+  };
+
+  const submitReport = async () => {
+    if (!reportTarget || !reportReason) {
+      showToast("error", "Please select a reason for the report");
+      return;
+    }
+
+    try {
+      const reportData: any = {
+        reason: reportReason,
+        description: reportDescription.trim() || undefined,
+      };
+
+      if (reportTarget.type === "rushmore") {
+        reportData.rushmoreId = reportTarget.id;
+      } else if (reportTarget.type === "comment") {
+        reportData.commentId = reportTarget.id;
+      }
+
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportData),
+      });
+
+      if (response.ok) {
+        showToast("success", "Report submitted successfully");
+        setShowReportModal(false);
+        setReportTarget(null);
+        setReportReason("");
+        setReportDescription("");
+      } else {
+        const error = await response.json();
+        showToast("error", error.error || "Failed to submit report");
+      }
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      showToast("error", "Failed to submit report");
+    }
   };
 
   if (loading) {
@@ -189,9 +424,14 @@ export default function PlayPage() {
             <span className="text-lg">←</span> back to home
           </Link>
           <div className="flex items-center gap-6">
-            <Link href="/leaderboard" className="text-blue-600 hover:text-blue-800 transition-colors duration-200 font-light lowercase tracking-wide hover:underline flex items-center gap-2">
-              <span className="text-sm">▲</span> leaderboard
+            <Link href="/friends" className="text-blue-600 hover:text-blue-800 transition-colors duration-200 font-light lowercase tracking-wide hover:underline flex items-center gap-2">
+              <span className="text-sm">●</span> friends
             </Link>
+            {session?.user?.email === "admin@rushmore.com" && (
+              <Link href="/moderation" className="text-red-600 hover:text-red-800 transition-colors duration-200 font-light lowercase tracking-wide hover:underline flex items-center gap-2">
+                <span className="text-sm">⚡</span> moderation
+              </Link>
+            )}
             <div className="text-right flex flex-col items-end gap-1">
               {session ? (
                 <>
@@ -216,36 +456,46 @@ export default function PlayPage() {
         </div>
 
         {/* User Stats */}
-        {session && (
+        {session && userStats && (
           <div className="mb-8">
             <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col sm:flex-row gap-6 items-center justify-between">
               <div>
                 <div className="text-lg font-light text-gray-700 lowercase">your stats</div>
                 <div className="flex gap-6 mt-2">
                   <div>
-                    <div className="text-2xl font-bold text-blue-700">45</div>
+                    <div className="text-2xl font-bold text-blue-700">{userStats.totalRushmores}</div>
                     <div className="text-xs text-gray-500">rushmores</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-700">267</div>
+                    <div className="text-2xl font-bold text-green-700">{userStats.totalVotesCast}</div>
                     <div className="text-xs text-gray-500">votes cast</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-purple-700">832</div>
+                    <div className="text-2xl font-bold text-purple-700">{userStats.totalUpvotes}</div>
                     <div className="text-xs text-gray-500">upvotes received</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-orange-700">45</div>
+                    <div className="text-2xl font-bold text-orange-700">{userStats.totalDaysPlayed}</div>
                     <div className="text-xs text-gray-500">days played</div>
                   </div>
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-gray-400">last played</div>
-                <div className="text-lg text-gray-700">July 16, 2025</div>
-                <div className="mt-2 text-xs text-gray-500">
-                  best rushmore upvotes: 200
+              <div className="text-right">
+                <div className="text-xs text-gray-400">current streak</div>
+                <div className="text-2xl font-bold text-red-600">{userStats.currentStreak} 🔥</div>
+                <div className="text-xs text-gray-500">
+                  longest: {userStats.longestStreak} days
                 </div>
+                {userStats.lastPlayed && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    last played: {new Date(userStats.lastPlayed).toLocaleDateString()}
+                  </div>
+                )}
+                {userStats.bestRushmore && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    best rushmore: {userStats.bestRushmore.upvotes} upvotes
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -254,7 +504,7 @@ export default function PlayPage() {
         {/* Today's Question */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-light mb-4 lowercase tracking-wide text-gray-800">today's question</h1>
+            <h1 className="text-3xl font-light mb-4 lowercase tracking-wide text-gray-800">today's rushmore</h1>
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
           </div>
           <p className="text-2xl text-center italic text-gray-700 lowercase leading-relaxed">"{question?.prompt}"</p>
@@ -365,68 +615,196 @@ export default function PlayPage() {
               <div className="bg-gray-50 p-4 rounded-xl border">3. {userRushmore.item3}</div>
               <div className="bg-gray-50 p-4 rounded-xl border">4. {userRushmore.item4}</div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <button
-                onClick={() => shareRushmore(userRushmore)}
-                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 lowercase shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                share
-              </button>
-              <span className="text-sm text-gray-600 lowercase bg-gray-50 px-4 py-2 rounded-lg">
-                votes: {userRushmore.voteCount} (↑{userRushmore.upvotes} ↓{userRushmore.downvotes})
-              </span>
-            </div>
+                              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => shareRushmore(userRushmore)}
+                        className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 lowercase shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        share
+                      </button>
+                    </div>
+                    <span className="text-sm text-gray-600 lowercase bg-gray-50 px-4 py-2 rounded-lg">
+                      votes: {userRushmore.voteCount} (↑{userRushmore.upvotes} ↓{userRushmore.downvotes})
+                    </span>
+                  </div>
           </div>
         )}
 
-        {/* All Rushmores */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
-          <h2 className="text-2xl font-light mb-8 lowercase tracking-wide text-gray-800 flex items-center gap-2">
-            <span className="text-2xl">●</span>
-            today's rushmores
-          </h2>
-          {rushmores.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-gray-400 text-2xl">●</span>
+        {/* Today's Rushmores */}
+        {hasVotedToday && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift" style={{animationDelay: '0.6s'}}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <h2 className="text-2xl font-light text-gray-800 lowercase tracking-wide flex items-center gap-2">
+                <span className="text-2xl">●</span>
+                today's rushmores
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 lowercase">sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'top' | 'bottom' | 'new')}
+                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm lowercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="top">top</option>
+                  <option value="bottom">bottom</option>
+                  <option value="new">new</option>
+                </select>
               </div>
-              <p className="text-gray-500 lowercase text-lg">no rushmores submitted yet. be the first!</p>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {rushmores.map((rushmore, index) => (
-                <div key={rushmore.id} className="border border-gray-200 rounded-xl p-6 hover-lift bg-gray-50 transition-all duration-200">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-light text-gray-800 lowercase text-lg">{rushmore.user.name}</h3>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleVote(rushmore.id, 1)}
-                        className="text-green-600 hover:text-green-800 transition-colors duration-200 text-xl hover:scale-110 transform"
-                        title={!session ? "sign in to vote" : "upvote"}
-                      >
-                        ↑
-                      </button>
-                      <span className="font-light text-lg min-w-[2rem] text-center">{rushmore.voteCount}</span>
-                      <button
-                        onClick={() => handleVote(rushmore.id, -1)}
-                        className="text-red-600 hover:text-red-800 transition-colors duration-200 text-xl hover:scale-110 transform"
-                        title={!session ? "sign in to vote" : "downvote"}
-                      >
-                        ↓
-                      </button>
+            
+            {sortedRushmores.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 lowercase">
+                no rushmores yet today. be the first!
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {sortedRushmores.map((rushmore, index) => (
+                  <div key={rushmore.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-500 lowercase">#{index + 1}</span>
+                        <span className="font-medium text-gray-800 lowercase">{rushmore.user.name}</span>
+                        {session && session.user?.email !== rushmore.user.email && (
+                          <button
+                            onClick={() => following[rushmore.user.email] 
+                              ? handleUnfollow(rushmore.user.email)
+                              : handleFollow(rushmore.user.email)
+                            }
+                            className={`px-3 py-1 rounded-lg text-xs lowercase transition-all duration-200 ${
+                              following[rushmore.user.email]
+                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            }`}
+                          >
+                            {following[rushmore.user.email] ? 'unfollow' : 'follow'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleVote(rushmore.id, 1)}
+                            disabled={votingStates[rushmore.id]}
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200 disabled:opacity-50 lowercase text-sm"
+                          >
+                            ↑ {rushmore.upvotes}
+                          </button>
+                          <button
+                            onClick={() => handleVote(rushmore.id, -1)}
+                            disabled={votingStates[rushmore.id]}
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200 disabled:opacity-50 lowercase text-sm"
+                          >
+                            ↓ {rushmore.downvotes}
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => shareRushmore(rushmore)}
+                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 lowercase text-sm"
+                        >
+                          share
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <div className="bg-gray-50 p-3 rounded-lg border text-sm">1. {rushmore.item1}</div>
+                      <div className="bg-gray-50 p-3 rounded-lg border text-sm">2. {rushmore.item2}</div>
+                      <div className="bg-gray-50 p-3 rounded-lg border text-sm">3. {rushmore.item3}</div>
+                      <div className="bg-gray-50 p-3 rounded-lg border text-sm">4. {rushmore.item4}</div>
+                    </div>
+                    <div className="text-xs text-gray-500 lowercase">
+                      total votes: {rushmore.voteCount} • {new Date(rushmore.createdAt).toLocaleTimeString()}
+                    </div>
+                    
+                    {/* Comments Section */}
+                    <div className="mt-4 border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-gray-700 lowercase">comments</h4>
+                        <button
+                          onClick={() => setExpandedComments(prev => ({ ...prev, [rushmore.id]: !prev[rushmore.id] }))}
+                          className="text-xs text-blue-600 hover:text-blue-800 lowercase"
+                        >
+                          {expandedComments[rushmore.id] ? 'hide' : 'show'} comments
+                        </button>
+                      </div>
+                      
+                      {expandedComments[rushmore.id] && (
+                        <div className="space-y-3">
+                          {/* Comment Input */}
+                          {session && (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={commentInputs[rushmore.id] || ''}
+                                onChange={(e) => setCommentInputs(prev => ({ ...prev, [rushmore.id]: e.target.value }))}
+                                placeholder="add a comment..."
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm lowercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && commentInputs[rushmore.id]?.trim()) {
+                                    handleCommentSubmit(rushmore.id);
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() => handleCommentSubmit(rushmore.id)}
+                                disabled={!commentInputs[rushmore.id]?.trim()}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm lowercase hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                post
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Comments List */}
+                          <div className="space-y-2">
+                            {comments.filter(c => c.rushmoreId === rushmore.id).map((comment) => (
+                              <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-medium text-gray-700 lowercase">{comment.user.name}</span>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(comment.createdAt).toLocaleTimeString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-800 lowercase">{comment.content}</p>
+                              </div>
+                            ))}
+                            {comments.filter(c => c.rushmoreId === rushmore.id).length === 0 && (
+                              <p className="text-xs text-gray-500 lowercase italic">no comments yet</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-white p-3 rounded-lg border shadow-sm">1. {rushmore.item1}</div>
-                    <div className="bg-white p-3 rounded-lg border shadow-sm">2. {rushmore.item2}</div>
-                    <div className="bg-white p-3 rounded-lg border shadow-sm">3. {rushmore.item3}</div>
-                    <div className="bg-white p-3 rounded-lg border shadow-sm">4. {rushmore.item4}</div>
-                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Achievement Toast */}
+        {showAchievementToast && newAchievements.length > 0 && (
+          <div className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-xl shadow-xl z-50 animate-slide-in">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">🏆</div>
+              <div>
+                <div className="font-bold lowercase">achievement unlocked!</div>
+                <div className="text-sm opacity-90">
+                  {newAchievements.length === 1 
+                    ? newAchievements[0]
+                    : `${newAchievements.length} new achievements`
+                  }
                 </div>
-              ))}
+              </div>
+              <button
+                onClick={() => setShowAchievementToast(false)}
+                className="text-white hover:text-gray-200 text-xl"
+              >
+                ×
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
