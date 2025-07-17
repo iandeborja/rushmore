@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "@/components/Providers";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -15,6 +15,7 @@ interface Rushmore {
   user: {
     name: string;
     email: string;
+    username?: string;
   };
   voteCount: number;
   upvotes: number;
@@ -29,9 +30,7 @@ interface Question {
 }
 
 export default function RushmorePage({ params }: { params: Promise<{ id: string }> }) {
-  const sessionContext = useSession();
-  const session = sessionContext?.data;
-  const status = sessionContext?.status;
+  const { data: session, status } = useSession();
   const { showToast } = useToast();
   const [rushmore, setRushmore] = useState<Rushmore | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
@@ -92,6 +91,7 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
 
     try {
       const email = session.user?.email;
+      if (!email) return;
       const response = await fetch(`/api/votes?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,7 +157,7 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
           <div className="text-right flex flex-col items-end gap-1">
             {session ? (
               <>
-                <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.name}</p>
+                <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username}</p>
                 <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
                   sign out
                 </Link>
@@ -189,7 +189,12 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
         <div className="bg-white rounded-2xl shadow-xl p-8 animate-slide-in hover-lift" style={{animationDelay: '0.2s'}}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-800 lowercase text-lg">{rushmore.user.name}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-800 lowercase text-lg">@{rushmore.user.username || rushmore.user.name}</span>
+                {!rushmore.user.username && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">guest</span>
+                )}
+              </div>
               <span className="text-xs text-gray-500 lowercase">
                 {new Date(rushmore.createdAt).toLocaleDateString()} at {new Date(rushmore.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
               </span>

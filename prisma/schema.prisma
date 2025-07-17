@@ -38,6 +38,7 @@ model User {
   name      String?
   username  String?  @unique
   image     String?
+  hashedPassword String?
   role      UserRole @default(USER)
   isBanned  Boolean  @default(false)
   banReason String?

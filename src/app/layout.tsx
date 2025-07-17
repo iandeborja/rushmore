@@ -16,8 +16,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rushmore",
-  description: "What's your Mt. Rushmore?",
+  title: "rushmore",
+  description: "what's on your mt. rushmore?",
+  openGraph: {
+    title: "rushmore",
+    description: "what's on your mt. rushmore?",
+    images: [
+      {
+        url: '/rushmore_OG.png',
+        width: 1200,
+        height: 630,
+        alt: 'Rushmore - What\'s your Mt. Rushmore?',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "rushmore",
+    description: "what's on your mt. rushmore?",
+    images: ['/rushmore_OG.png'],
+  },
+  icons: {
+    icon: [
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -39,7 +65,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastProvider>
-          <Providers session={null}>
+          <Providers>
             {children}
           </Providers>
         </ToastProvider>

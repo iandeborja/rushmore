@@ -4,7 +4,7 @@
 // Current question: "best fast food menu items"
 
 import { useState, useEffect, useMemo } from "react";
-import { useSession } from "@/components/Providers";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -45,9 +45,7 @@ interface Comment {
 }
 
 export default function PlayPage() {
-  const sessionContext = useSession();
-  const session = sessionContext?.data;
-  const status = sessionContext?.status;
+  const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -228,6 +226,7 @@ export default function PlayPage() {
 
     try {
       const email = session.user?.email;
+      if (!email) return;
       const response = await fetch(`/api/votes?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -455,7 +454,7 @@ export default function PlayPage() {
             <div className="text-right flex flex-col items-end gap-1">
               {session ? (
                 <>
-                  <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.name}</p>
+                  <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username}</p>
                   <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
                     sign out
                   </Link>
@@ -622,6 +621,21 @@ export default function PlayPage() {
           </div>
         )}
 
+        {/* Message about needing to submit to see other responses */}
+        {!userRushmore && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-slide-in hover-lift" style={{animationDelay: '0.4s'}}>
+            <div className="flex flex-col items-center justify-center text-center py-8">
+              <h2 className="text-2xl font-light text-gray-800 lowercase tracking-wide flex items-center gap-2 mb-4">
+                <span className="text-2xl">●</span>
+                submit your answers to see today's rushmores
+              </h2>
+              <p className="text-gray-600 lowercase text-sm">
+                once you submit your rushmore, you'll be able to view and vote on everyone else's responses
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* User's Rushmore */}
         {userRushmore && (
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 animate-fade-in hover-lift" style={{animationDelay: '0.4s'}}>
@@ -684,8 +698,13 @@ export default function PlayPage() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-500 lowercase">#{index + 1}</span>
-                        <span className="font-medium text-gray-800 lowercase">@{rushmore.user.username}</span>
-                        {session && session.user?.email !== rushmore.user.email && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-800 lowercase">@{rushmore.user.username || rushmore.user.name}</span>
+                          {!rushmore.user.username && (
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">guest</span>
+                          )}
+                        </div>
+                        {session && session.user?.email !== rushmore.user.email && rushmore.user.username && (
                           <button
                             onClick={() => following[rushmore.user.email] 
                               ? handleUnfollow(rushmore.user.email)
@@ -780,7 +799,12 @@ export default function PlayPage() {
                             {comments.filter(c => c.rushmoreId === rushmore.id).map((comment) => (
                               <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-medium text-gray-700 lowercase">{comment.user.name}</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-medium text-gray-700 lowercase">@{comment.user.username || comment.user.name}</span>
+                                    {!comment.user.username && (
+                                      <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">guest</span>
+                                    )}
+                                  </div>
                                   <span className="text-xs text-gray-500">
                                     {new Date(comment.createdAt).toLocaleTimeString()}
                                   </span>

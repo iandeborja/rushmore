@@ -13,12 +13,21 @@ export default function Home() {
       <div className="relative z-10 w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-6xl font-light mb-4 text-center lowercase tracking-wide bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          {/* Mountain image above the title */}
+          <div className="flex justify-center">
+            <img 
+              src="/mountain.png" 
+              alt="Mountain silhouette" 
+              className="w-auto h-80 opacity-40 object-contain"
+            />
+          </div>
+          
+          <h1 className="text-6xl font-light mb-4 text-center lowercase tracking-wide bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent -mt-24">
             rushmore
           </h1>
           <p className="text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed lowercase">
             
-            <span className="block mt-2 text-lg font-medium text-gray-800">
+            <span className="block mt-2 text-lg font-medium text-gray-600">
               create and vote for daily top 4 lists
             </span>
           </p>
@@ -37,12 +46,19 @@ export default function Home() {
 
         {/* Auth Links */}
         <div className="text-center animate-fade-in" style={{animationDelay: '0.3s'}}>
-          <div className="flex flex-col items-center justify-center gap-4 mb-4">
+          <div className="flex items-center justify-center gap-4 mb-4">
             <Link 
               href="/auth/signin" 
               className="text-blue-700 hover:text-blue-800 font-medium lowercase transition-colors duration-200 hover:underline"
             >
-              sign in with google
+              sign in
+            </Link>
+            <span className="text-gray-400">|</span>
+            <Link 
+              href="/auth/signup" 
+              className="text-blue-700 hover:text-blue-800 font-medium lowercase transition-colors duration-200 hover:underline"
+            >
+              sign up
             </Link>
           </div>
           <p className="text-gray-500 text-sm lowercase italic">

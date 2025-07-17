@@ -1,18 +1,54 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        }) as any;
+
+        if (!user || !user.hashedPassword) {
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.hashedPassword
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          username: user.username,
+        };
+      }
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/signin"
@@ -21,37 +57,18 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = (user as any).username;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        
-        // Get username from database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-        });
-        session.user.username = dbUser?.username || null;
+        session.user.username = token.username as string;
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      // Handle different redirect scenarios
-      if (url === baseUrl || url === `${baseUrl}/`) {
-        // Default redirect after sign-in
-        return `${baseUrl}/setup-username`;
-      }
-      
-      // If coming from sign-in page, go to setup-username
-      if (url.includes('/auth/signin')) {
-        return `${baseUrl}/setup-username`;
-      }
-      
-      // For all other cases, use the provided URL
-      return url;
-    }
-  }
+  },
 });
 
 export { handler as GET, handler as POST };

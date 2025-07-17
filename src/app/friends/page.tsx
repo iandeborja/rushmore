@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSession } from "@/components/Providers";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/components/Toast";
 import Link from "next/link";
 
 export default function FriendsPage() {
-  const sessionContext = useSession();
-  const session = sessionContext?.data;
+  const { data: session } = useSession();
   const { showToast } = useToast();
   const [friends, setFriends] = useState<{ email: string, name: string }[]>([]);
   const [rushmores, setRushmores] = useState<any[]>([]);
@@ -38,6 +37,7 @@ export default function FriendsPage() {
     setVotingStates(prev => ({ ...prev, [rushmoreId]: true }));
     try {
       const email = session.user?.email;
+      if (!email) return;
       const response = await fetch(`/api/votes?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,7 +83,7 @@ export default function FriendsPage() {
             return (
               <div key={friendRushmore.id} className="border border-gray-200 rounded-xl p-6 hover-lift bg-gray-50 transition-all duration-200">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-light text-gray-800 lowercase text-lg">{friendRushmore.user.name}</h3>
+                  <h3 className="font-light text-gray-800 lowercase text-lg">@{friendRushmore.user.username || friendRushmore.user.name}</h3>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleVote(friendRushmore.id, 1)}
