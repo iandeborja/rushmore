@@ -6,7 +6,6 @@ export const questions = [
   "Things you'd bring to a desert island",
   "Best pizza toppings",
   "Things that are underrated",
-  "Things that make you say \"hell yea, it's summer\"",
   "Best movie sequels",
   "Worst superhero movies",
   "Things you'd find in a college dorm",

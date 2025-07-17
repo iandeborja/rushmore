@@ -15,6 +15,7 @@
     "db:seed": "tsx scripts/seedAchievements.ts",
     "set-question": "tsx scripts/setTodayQuestion.ts",
     "set-today-question": "tsx scripts/setTodayQuestion.ts",
+    "check-today-question": "tsx scripts/checkTodayQuestion.ts",
     "set-multiple-questions": "tsx scripts/setMultipleQuestions.ts",
     "daily-reset": "tsx scripts/dailyReset.ts",
     "ensure-question": "tsx scripts/ensureTodayQuestion.ts"

@@ -162,21 +162,15 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
           <div className="text-right flex flex-col items-end gap-1">
             {session ? (
               <>
-                <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username}</p>
+                <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username || session.user?.name}</p>
                 <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
                   sign out
                 </Link>
               </>
             ) : (
-              <>
-                <Link href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                  sign in
-                </Link>
-                <span className="text-sm text-gray-500 mx-2">|</span>
-                                 <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                    sign up
-                  </Link>
-              </>
+              <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
+                sign up
+              </Link>
             )}
           </div>
         </div>
@@ -196,7 +190,7 @@ export default function RushmorePage({ params }: { params: Promise<{ id: string 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-800 lowercase text-lg">@{rushmore.user.username || rushmore.user.name}</span>
-                {!rushmore.user.username && (
+                {rushmore.user.email.startsWith('anonymous-') && (
                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">guest</span>
                 )}
               </div>

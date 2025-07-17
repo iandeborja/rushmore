@@ -20,6 +20,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Prevent anonymous users from commenting
+    if (userEmail.startsWith('anonymous-')) {
+      return NextResponse.json({ error: "Please sign up to leave comments" }, { status: 403 });
+    }
+
     const { rushmoreId, content } = await request.json();
     if (!rushmoreId || !content || content.trim().length === 0) {
       return NextResponse.json(

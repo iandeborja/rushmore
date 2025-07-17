@@ -512,21 +512,15 @@ export default function PlayPage() {
             <div className="text-right flex flex-col items-end gap-1">
               {session ? (
                 <>
-                  <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username}</p>
+                  <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username || session.user?.name}</p>
                   <Link href="/api/auth/signout" className="text-sm text-red-600 hover:text-red-800 transition-colors duration-200 lowercase hover:underline">
                     sign out
                   </Link>
                 </>
               ) : (
-                <>
-                  <Link href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                    sign in
-                  </Link>
-                  <span className="text-sm text-gray-500 mx-2">|</span>
-                                     <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
-                      sign up
-                    </Link>
-                </>
+                <Link href="/auth/signup" className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 lowercase hover:underline">
+                  sign up
+                </Link>
               )}
             </div>
           </div>
@@ -774,7 +768,7 @@ export default function PlayPage() {
                         <span className="text-sm text-gray-500 lowercase">#{index + 1}</span>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-gray-800 lowercase">@{rushmore.user.username || rushmore.user.name}</span>
-                          {!rushmore.user.username && (
+                          {rushmore.user.email.startsWith('anonymous-') && (
                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">guest</span>
                           )}
                         </div>
@@ -844,7 +838,7 @@ export default function PlayPage() {
                       {expandedComments[rushmore.id] && (
                         <div className="space-y-3">
                           {/* Comment Input */}
-                          {session && (
+                          {session ? (
                             <div className="flex gap-2">
                               <input
                                 type="text"
@@ -866,6 +860,21 @@ export default function PlayPage() {
                                 post
                               </button>
                             </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                disabled
+                                placeholder="sign up to leave a comment"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm lowercase bg-gray-50 text-gray-500 cursor-not-allowed"
+                              />
+                              <Link
+                                href="/auth/signup"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm lowercase hover:bg-blue-700 transition-colors duration-200"
+                              >
+                                sign up
+                              </Link>
+                            </div>
                           )}
                           
                           {/* Comments List */}
@@ -875,7 +884,7 @@ export default function PlayPage() {
                                 <div className="flex items-center gap-2 mb-1">
                                   <div className="flex items-center gap-1">
                                     <span className="text-xs font-medium text-gray-700 lowercase">@{comment.user.username || comment.user.name}</span>
-                                    {!comment.user.username && (
+                                    {comment.user.email.startsWith('anonymous-') && (
                                       <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">guest</span>
                                     )}
                                   </div>
