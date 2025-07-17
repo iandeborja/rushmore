@@ -5,7 +5,8 @@ import { useToast } from "@/components/Toast";
 import Link from "next/link";
 
 export default function FriendsPage() {
-  const { data: session } = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext?.data;
   const { showToast } = useToast();
   const [friends, setFriends] = useState<{ email: string, name: string }[]>([]);
   const [rushmores, setRushmores] = useState<any[]>([]);
