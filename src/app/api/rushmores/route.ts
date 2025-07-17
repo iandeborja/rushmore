@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { validateRushmoreSubmission } from "@/utils/automod";
 import { updateUserStreak } from "@/utils/streaks";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // POST - Submit a new Rushmore
 export async function POST(request: NextRequest) {
