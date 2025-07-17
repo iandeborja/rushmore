@@ -40,7 +40,9 @@ interface Comment {
 }
 
 export default function PlayPage() {
-  const { data: session, status } = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext?.data;
+  const status = sessionContext?.status;
   const { showToast } = useToast();
   const router = useRouter();
   const [question, setQuestion] = useState<Question | null>(null);
