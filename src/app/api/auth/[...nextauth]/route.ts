@@ -56,7 +56,8 @@ const handler = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: "/auth/signin"
+    signIn: "/auth/signin",
+    signOut: "/"
   },
   callbacks: {
     async jwt({ token, user }) {

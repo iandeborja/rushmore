@@ -50,14 +50,7 @@ export default function PlayPage() {
   const { showToast } = useToast();
   const router = useRouter();
 
-  // Redirect to username setup if user is signed in but doesn't have a username
-  useEffect(() => {
-    if (status === "loading") return;
-    // Only redirect if user is authenticated AND doesn't have a username
-    if (session?.user && session.user.email && !session.user.username) {
-      router.push("/setup-username");
-    }
-  }, [session, status, router]);
+  // No need to redirect to username setup since username is set during signup
   const [question, setQuestion] = useState<Question | null>(null);
   const [rushmores, setRushmores] = useState<Rushmore[]>([]);
   const [userRushmore, setUserRushmore] = useState<Rushmore | null>(null);
