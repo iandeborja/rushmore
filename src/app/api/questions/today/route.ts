@@ -31,12 +31,20 @@ const fallbackQuestions = [
 
 export async function GET() {
   try {
+    console.log("🔍 Questions API - Starting request");
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    console.log("🔍 Questions API - Today's date range:", {
+      start: today.toISOString(),
+      end: new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString()
+    });
 
     // Find today's question from the database with timeout
     let question;
     try {
+      console.log("🔍 Questions API - Attempting database query...");
       question = await Promise.race([
         prisma.question.findFirst({
           where: {
@@ -50,9 +58,11 @@ export async function GET() {
           setTimeout(() => reject(new Error('Database query timeout')), 10000)
         )
       ]);
+      console.log("🔍 Questions API - Database query result:", question ? `"${(question as any).prompt}"` : "No question found");
     } catch (dbError) {
-      console.error("Database query failed:", dbError);
+      console.error("🔍 Questions API - Database query failed:", dbError);
       // Return fallback question if database is unavailable
+      console.log("🔍 Questions API - Returning fallback question due to database error");
       return NextResponse.json({
         id: 'fallback',
         prompt: "best fast food menu items",
@@ -64,7 +74,7 @@ export async function GET() {
 
     if (!question) {
       // Create a fallback question if none exists
-      console.log("No question found for today, creating fallback question");
+      console.log("🔍 Questions API - No question found for today, creating fallback question");
       const randomQuestion = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
       
       try {
@@ -75,11 +85,12 @@ export async function GET() {
           },
         });
 
-        console.log("✅ Created new question for today:", newQuestion.prompt);
+        console.log("✅ Questions API - Created new question for today:", newQuestion.prompt);
         return NextResponse.json(newQuestion);
       } catch (createError) {
-        console.error("Error creating fallback question:", createError);
+        console.error("🔍 Questions API - Error creating fallback question:", createError);
         // Return a hardcoded question if database creation fails
+        console.log("🔍 Questions API - Returning hardcoded fallback due to creation error");
         return NextResponse.json({
           id: 'fallback',
           prompt: "best fast food menu items",
@@ -90,14 +101,16 @@ export async function GET() {
       }
     }
 
+    console.log("🔍 Questions API - Returning existing question:", (question as any).prompt);
     return NextResponse.json(question);
   } catch (error) {
-    console.error("Error getting today's question:", error);
+    console.error("🔍 Questions API - Error getting today's question:", error);
     
     // Return fallback question instead of error
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    console.log("🔍 Questions API - Returning fallback question due to general error");
     return NextResponse.json({
       id: 'fallback',
       prompt: "best fast food menu items",
