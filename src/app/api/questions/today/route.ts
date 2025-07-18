@@ -32,6 +32,11 @@ const fallbackQuestions = [
 export async function GET() {
   try {
     console.log("🔍 Questions API - Starting request");
+    console.log("🔍 Questions API - Environment check:", {
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: process.env.DATABASE_URL ? "SET" : "NOT SET",
+      PRISMA_CLIENT_ENGINE_TYPE: process.env.PRISMA_CLIENT_ENGINE_TYPE,
+    });
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
