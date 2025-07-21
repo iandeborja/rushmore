@@ -9,6 +9,7 @@ interface Rushmore {
   user: {
     name: string;
     email: string;
+    displayUsername?: string;
   };
   voteCount: number;
   upvotes: number;
@@ -37,15 +38,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       };
     }
 
-    // Set today's question (manually updated)
-    const questionData = {
-      id: "today",
-      prompt: "best fast food menu items",
-      date: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
+    // Fetch today's question
+    const questionRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/questions/today`);
+    const questionData = await questionRes.json();
 
-    const title = `${rushmore.user.name}'s "${questionData.prompt}" mt. rushmore`;
+    const username = rushmore.user.displayUsername || rushmore.user.name || 'user';
+    const title = `@${username}'s "${questionData.prompt}" mt. rushmore`;
     const description = `check out this ${questionData.prompt} mt. rushmore: 1. ${rushmore.item1} 2. ${rushmore.item2} 3. ${rushmore.item3} 4. ${rushmore.item4}`;
     const url = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/rushmore/${rushmore.id}`;
 
@@ -59,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         siteName: 'Rushmore',
         images: [
           {
-            url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`,
+            url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&v=2`,
             width: 1200,
             height: 630,
             alt: title,
@@ -72,7 +70,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         card: 'summary_large_image',
         title,
         description,
-        images: [`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`],
+        images: [`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&v=2`],
       },
     };
   } catch (error) {
