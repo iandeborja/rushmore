@@ -516,7 +516,9 @@ export default function PlayPage() {
               </Link>
             )}
             <div className="text-right flex flex-col items-end gap-1">
-              {session ? (
+              {status === "loading" ? (
+                <div className="text-sm text-gray-400 lowercase">loading...</div>
+              ) : session ? (
                 <>
                   <p className="text-sm text-gray-600 lowercase">welcome, {session.user?.username || session.user?.name}</p>
                   <button 
